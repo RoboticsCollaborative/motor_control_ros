@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
         soem
         )
 
+find_package(Boost COMPONENTS system python thread program_options REQUIRED)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -125,7 +127,9 @@ add_library(${PROJECT_NAME}_src
         src/${PROJECT_NAME}/config_map.c
         src/${PROJECT_NAME}/config_SDOparam.c
         src/${PROJECT_NAME}/controller.c
-        src/${PROJECT_NAME}/haptic_config.c)
+        src/${PROJECT_NAME}/haptic_config.c
+#        src/${PROJECT_NAME}/ros_interface.cpp
+        )
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -133,16 +137,17 @@ include_directories(
          include
         ${catkin_INCLUDE_DIRS}
         ${soem_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}_config_map src/${PROJECT_NAME}/config_map.c)
-add_library(${PROJECT_NAME}_config_SDOparam src/${PROJECT_NAME}/config_SDOparam.c)
-add_library(${PROJECT_NAME}_controller src/${PROJECT_NAME}/controller.c)
-add_library(${PROJECT_NAME}_haptic_config src/${PROJECT_NAME}/haptic_config.c)
+#add_library(${PROJECT_NAME}_config_map src/${PROJECT_NAME}/config_map.c)
+#add_library(${PROJECT_NAME}_config_SDOparam src/${PROJECT_NAME}/config_SDOparam.c)
+#add_library(${PROJECT_NAME}_controller src/${PROJECT_NAME}/controller.c)
+#add_library(${PROJECT_NAME}_haptic_config src/${PROJECT_NAME}/haptic_config.c)
 add_library(${PROJECT_NAME}_ros_interface src/${PROJECT_NAME}/ros_interface.cpp)
 
-
+add_library(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 
 
 ## Add cmake target dependencies of the library
@@ -155,6 +160,8 @@ add_library(${PROJECT_NAME}_ros_interface src/${PROJECT_NAME}/ros_interface.cpp)
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_haptic_run src/${PROJECT_NAME}/haptic_run.cpp)
 add_executable(${PROJECT_NAME}_simple_test src/motor_control_ros/simple_test.c)
+#add_executable(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -189,9 +196,11 @@ target_link_libraries(${PROJECT_NAME}_src ${catkin_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME}_simple_test ${catkin_LIBRARIES})
 
-target_link_libraries(${PROJECT_NAME}_haptic_run
-        ${PROJECT_NAME}_src
-        )
+target_link_libraries(${PROJECT_NAME}_haptic_run ${PROJECT_NAME}_src)
+
+target_link_libraries(${PROJECT_NAME}_ros_interface ${PROJECT_NAME}_src)
+
+target_link_libraries(${PROJECT_NAME}_rdd_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PROJECT_NAME}_ros_interface)
 
 #############
 ## Install ##
