@@ -125,7 +125,9 @@ add_library(${PROJECT_NAME}_src
         src/${PROJECT_NAME}/config_map.c
         src/${PROJECT_NAME}/config_SDOparam.c
         src/${PROJECT_NAME}/controller.c
-        src/${PROJECT_NAME}/haptic_config.c)
+        src/${PROJECT_NAME}/haptic_config.c
+        src/${PROJECT_NAME}/ros_interface.cpp
+        src/nodes/rdd_node.cpp)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -136,12 +138,11 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}_config_map src/${PROJECT_NAME}/config_map.c)
-add_library(${PROJECT_NAME}_config_SDOparam src/${PROJECT_NAME}/config_SDOparam.c)
-add_library(${PROJECT_NAME}_controller src/${PROJECT_NAME}/controller.c)
-add_library(${PROJECT_NAME}_haptic_config src/${PROJECT_NAME}/haptic_config.c)
-add_library(${PROJECT_NAME}_ros_interface src/${PROJECT_NAME}/ros_interface.cpp)
-
+#add_library(${PROJECT_NAME}_config_map src/${PROJECT_NAME}/config_map.c)
+#add_library(${PROJECT_NAME}_config_SDOparam src/${PROJECT_NAME}/config_SDOparam.c)
+#add_library(${PROJECT_NAME}_controller src/${PROJECT_NAME}/controller.c)
+#add_library(${PROJECT_NAME}_haptic_config src/${PROJECT_NAME}/haptic_config.c)
+add_library(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 
 
 
@@ -189,9 +190,9 @@ target_link_libraries(${PROJECT_NAME}_src ${catkin_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME}_simple_test ${catkin_LIBRARIES})
 
-target_link_libraries(${PROJECT_NAME}_haptic_run
-        ${PROJECT_NAME}_src
-        )
+target_link_libraries(${PROJECT_NAME}_haptic_run ${PROJECT_NAME}_src)
+
+target_link_libraries(${PROJECT_NAME}_rdd_node ${PROJECT_NAME}_src)
 
 #############
 ## Install ##
