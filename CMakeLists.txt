@@ -140,7 +140,7 @@ add_library(${PROJECT_NAME}_config_map src/${PROJECT_NAME}/config_map.c)
 add_library(${PROJECT_NAME}_config_SDOparam src/${PROJECT_NAME}/config_SDOparam.c)
 add_library(${PROJECT_NAME}_controller src/${PROJECT_NAME}/controller.c)
 add_library(${PROJECT_NAME}_haptic_config src/${PROJECT_NAME}/haptic_config.c)
-#add_library(${PROJECT_NAME}_haptic_run src/${PROJECT_NAME}/haptic_run.cpp)
+add_library(${PROJECT_NAME}_ros_interface src/${PROJECT_NAME}/ros_interface.cpp)
 
 
 
