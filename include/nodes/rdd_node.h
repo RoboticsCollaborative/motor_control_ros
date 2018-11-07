@@ -11,14 +11,20 @@
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float64.h>
 
+#include "../motor_control_ros/ros_interface.h"
+#include <boost/thread/thread.hpp>
+
+
 class RDDNode
 {
 public:
-    RDDNode(ros::NodeHandle& node);
+    explicit RDDNode(ros::NodeHandle& node);
 
     ~RDDNode();
 
     void run();
+
+    static boost::thread* start_ros(int argc, char **argv);
 
 private:
     void set_torque_callback(const std_msgs::Int16& msg);

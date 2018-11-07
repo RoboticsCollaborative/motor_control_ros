@@ -3,7 +3,8 @@
 //
 
 #include "../../include/nodes/rdd_node.h"
-#include "../../include/motor_control_ros/ros_interface.h"
+
+using namespace std;
 
 RDDNode::RDDNode(ros::NodeHandle &node) {
     nh_ = node;
@@ -12,9 +13,7 @@ RDDNode::RDDNode(ros::NodeHandle &node) {
     actual_velocity_pub = nh_.advertise<std_msgs::Float64>("/rdd/actual_velocity", 1);
 }
 
-RDDNode::~RDDNode() {
-
-}
+RDDNode::~RDDNode() {}
 
 void RDDNode::set_torque_callback(const std_msgs::Int16& msg)
 {
@@ -33,5 +32,25 @@ void RDDNode::run()
         std_msgs::Float64 velocity_msg;
         velocity_msg.data = getActualVelocity(1);
         actual_velocity_pub.publish(velocity_msg);
+
+        ros::spinOnce();
+        rate.sleep();
     }
 }
+
+boost::thread* RDDNode::start_ros(int argc, char **argv)
+{
+    ros::init(argc, argv, "rdd");
+    ros::NodeHandle node("~");
+    RDDNode rdd(node);
+
+    boost::thread* ros_thread = new boost::thread(&RDDNode::run, &rdd);
+    return ros_thread;
+}
+
+//int main(int argc, char** argv)
+//{
+//    boost::thread* ros_thread = RDDNode::start_ros(argc, argv);
+//    ros::spin();
+//    return 0;
+//}
