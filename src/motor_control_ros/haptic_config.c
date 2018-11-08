@@ -158,10 +158,10 @@ void haptic_config(char *ifname)
 			ActualPosition = (in_motor->ac_pos)/Counts_per_radian;
 			ActualPosition = saturation(ActualPosition);
 			ActualVelocity = (in_motor->ac_vel)/Counts_per_radian/10;
-			InputTorque = PDcontroller(ReferencePosition, ActualPosition, ActualVelocity);
+//			InputTorque = PDcontroller(ReferencePosition, ActualPosition, ActualVelocity);
 			/* For damping meassure */
 //			InputTorque = 0.35;
-			out_motor->tg_tau = (int16)(InputTorque * Units_per_Nm);
+//			out_motor->tg_tau = (int16)(InputTorque * Units_per_Nm);
 
 /*
                         for(j = 0 ; j < oloop; j++)
