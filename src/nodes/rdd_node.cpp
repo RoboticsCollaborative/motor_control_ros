@@ -68,7 +68,6 @@ int RDDNode::join_ros_thread(int rv)
     return rv;
 }
 
-
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "rdd");
