@@ -3,6 +3,7 @@
 //
 
 #include "../../include/nodes/rdd_node.h"
+#include "../motor_control_ros/simple_test.cpp"
 
 using namespace std;
 
@@ -23,9 +24,15 @@ void RDDNode::set_torque_callback(const std_msgs::Int16ConstPtr& msg)
 
 void RDDNode::run()
 {
-    ros::Rate rate(100);
+    ros::Rate rate(2);
     while (ros::ok())
     {
+        if (not inOP){
+            ROS_INFO("driver not ready");
+            rate.sleep();
+            continue;
+        }
+        ROS_INFO("driver ready");
         std_msgs::Float64 position_msg;
         position_msg.data = 1.1;
 //        position_msg.data = getActualPosition(1);
@@ -72,6 +79,25 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "rdd");
     int rv = RDDNode::start_ros_thread();
+
+    printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
+
+    if (argc > 1)
+    {
+        /* create thread to handle slave error handling in OP */
+//      pthread_create( &thread1, NULL, (void *) &ecatcheck, (void*) &ctime);
+        osal_thread_create(&thread1, 128000, (void*) &ecatcheck, (void*) &ctime);
+        /* start cyclic part */
+        simpletest(argv[1]);
+//        osal_thread_create(&thread1, 128000, (void*) &simpletest, (void*) &ctime);
+
+    }
+    else
+    {
+        printf("Usage: simple_test ifname1\nifname = eth0 for example\n");
+    }
+
+
     ros::spin();
     RDDNode::join_ros_thread(rv);
     return 0;

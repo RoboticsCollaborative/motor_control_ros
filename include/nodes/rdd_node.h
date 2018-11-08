@@ -5,6 +5,7 @@
 #ifndef MOTOR_CONTROL_ROS_RDD_NODE_H
 #define MOTOR_CONTROL_ROS_RDD_NODE_H
 
+// c++
 #include <pthread.h>
 
 // ROS
@@ -12,9 +13,11 @@
 #include <std_msgs/Int16.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float64.h>
-
-#include "../motor_control_ros/ros_interface.h"
 #include <boost/thread/thread.hpp>
+
+//self
+#include "../motor_control_ros/ros_interface.h"
+#include "../motor_control_ros/haptic_config.h"
 
 static pthread_t ros_thread;
 static pthread_attr_t ros_thread_attr;
@@ -30,7 +33,7 @@ public:
 
     static int start_ros_thread();
     static int join_ros_thread(int rv);
-    
+
 private:
     static void* ros_loop(void* node_ptr);
 

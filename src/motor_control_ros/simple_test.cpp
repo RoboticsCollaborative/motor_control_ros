@@ -12,21 +12,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
-#include "../../include/nodes/rdd_node.h"
+//#include "../../include/nodes/rdd_node.h"
 
 extern "C" {
 #include <soem/ethercat.h>
+#include <motor_control_ros/haptic_config.h>
 }
 
 #define EC_TIMEOUTMON 500
 
-char IOmap[4096];
+//char IOmap[4096];
 OSAL_THREAD_HANDLE thread1;
-int expectedWKC;
-boolean needlf;
-volatile int wkc;
-boolean inOP;
-uint8 currentgroup = 0;
+//int expectedWKC;
+//boolean needlf;
+//volatile int wkc;
+//boolean inOP;
+//uint8 currentgroup = 0;
 
 void simpletest(char *ifname)
 {
@@ -222,24 +223,24 @@ OSAL_THREAD_FUNC ecatcheck( void *ptr )
     }
 }
 
-int main(int argc, char *argv[])
-{
-    printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
-
-    if (argc > 1)
-    {
-        /* create thread to handle slave error handling in OP */
-//      pthread_create( &thread1, NULL, (void *) &ecatcheck, (void*) &ctime);
-        osal_thread_create(&thread1, 128000, (void*) &ecatcheck, (void*) &ctime);
-        boost::thread* ros_thread = RDDNode::start_ros(argc, argv);
-        /* start cyclic part */
-        simpletest(argv[1]);
-    }
-    else
-    {
-        printf("Usage: simple_test ifname1\nifname = eth0 for example\n");
-    }
-
-    printf("End program\n");
-    return (0);
-}
+//int main(int argc, char *argv[])
+//{
+//    printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
+//
+//    if (argc > 1)
+//    {
+//        /* create thread to handle slave error handling in OP */
+////      pthread_create( &thread1, NULL, (void *) &ecatcheck, (void*) &ctime);
+//        osal_thread_create(&thread1, 128000, (void*) &ecatcheck, (void*) &ctime);
+//        boost::thread* ros_thread = RDDNode::start_ros(argc, argv);
+//        /* start cyclic part */
+//        simpletest(argv[1]);
+//    }
+//    else
+//    {
+//        printf("Usage: simple_test ifname1\nifname = eth0 for example\n");
+//    }
+//
+//    printf("End program\n");
+//    return (0);
+//}

@@ -146,7 +146,7 @@ include_directories(
 #add_library(${PROJECT_NAME}_controller src/${PROJECT_NAME}/controller.c)
 #add_library(${PROJECT_NAME}_haptic_config src/${PROJECT_NAME}/haptic_config.c)
 add_library(${PROJECT_NAME}_ros_interface src/${PROJECT_NAME}/ros_interface.cpp)
-
+add_library(${PROJECT_NAME}_simple_test_cpp src/motor_control_ros/simple_test.cpp)
 #add_library(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 
 
@@ -160,7 +160,6 @@ add_library(${PROJECT_NAME}_ros_interface src/${PROJECT_NAME}/ros_interface.cpp)
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_haptic_run src/${PROJECT_NAME}/haptic_run.cpp)
 add_executable(${PROJECT_NAME}_simple_test src/motor_control_ros/simple_test.c)
-add_executable(${PROJECT_NAME}_simple_test_cpp src/motor_control_ros/simple_test.cpp)
 add_executable(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 
 
@@ -197,13 +196,17 @@ target_link_libraries(${PROJECT_NAME}_src ${catkin_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME}_simple_test ${catkin_LIBRARIES})
 
-target_link_libraries(${PROJECT_NAME}_simple_test_cpp ${catkin_LIBRARIES} ${PROJECT_NAME}_rdd_node)
+#target_link_libraries(${PROJECT_NAME}_simple_test_cpp ${catkin_LIBRARIES} ${PROJECT_NAME}_rdd_node)
 
 target_link_libraries(${PROJECT_NAME}_haptic_run ${PROJECT_NAME}_src)
 
 target_link_libraries(${PROJECT_NAME}_ros_interface ${PROJECT_NAME}_src)
 
-target_link_libraries(${PROJECT_NAME}_rdd_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PROJECT_NAME}_ros_interface)
+target_link_libraries(${PROJECT_NAME}_rdd_node
+        ${catkin_LIBRARIES}
+        ${Boost_LIBRARIES}
+        ${PROJECT_NAME}_ros_interface
+        ${PROJECT_NAME}_simple_test_cpp)
 
 #############
 ## Install ##
