@@ -204,6 +204,7 @@ target_link_libraries(${PROJECT_NAME}_ros_interface ${PROJECT_NAME}_src)
 
 target_link_libraries(${PROJECT_NAME}_rdd_node
         ${catkin_LIBRARIES}
+#        ${PROJECT_NAME}_src
         ${Boost_LIBRARIES}
         ${PROJECT_NAME}_ros_interface
         ${PROJECT_NAME}_simple_test_cpp)

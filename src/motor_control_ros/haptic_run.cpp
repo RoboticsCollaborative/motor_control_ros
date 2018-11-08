@@ -14,7 +14,6 @@ extern "C" {
 #include "motor_control_ros/haptic_config.h"
 }
 
-OSAL_THREAD_HANDLE thread1, thread2;
 
 int main(int argc, char *argv[])
 {

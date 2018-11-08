@@ -22,7 +22,7 @@ extern "C" {
 #define EC_TIMEOUTMON 500
 
 //char IOmap[4096];
-OSAL_THREAD_HANDLE thread1;
+//OSAL_THREAD_HANDLE thread1;
 //int expectedWKC;
 //boolean needlf;
 //volatile int wkc;

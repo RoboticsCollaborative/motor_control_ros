@@ -17,6 +17,8 @@
 
 #define EC_TIMEOUTMON 500
 
+OSAL_THREAD_HANDLE thread1, thread2;
+
 char IOmap[4096];
 int expectedWKC;
 boolean needlf;

@@ -3,7 +3,6 @@
 //
 
 #include "../../include/nodes/rdd_node.h"
-#include "../motor_control_ros/simple_test.cpp"
 
 using namespace std;
 
@@ -34,13 +33,13 @@ void RDDNode::run()
         }
         ROS_INFO("driver ready");
         std_msgs::Float64 position_msg;
-        position_msg.data = 1.1;
-//        position_msg.data = getActualPosition(1);
+//        position_msg.data = 1.1;
+        position_msg.data = getActualPosition(1);
         actual_position_pub.publish(position_msg);
 
         std_msgs::Float64 velocity_msg;
-//        velocity_msg.data = getActualVelocity(1);
-        velocity_msg.data = 2.1;
+//        velocity_msg.data = 2.1;
+        velocity_msg.data = getActualVelocity(1);
         actual_velocity_pub.publish(velocity_msg);
 
         ros::spinOnce();
@@ -84,13 +83,11 @@ int main(int argc, char** argv)
 
     if (argc > 1)
     {
-        /* create thread to handle slave error handling in OP */
-//      pthread_create( &thread1, NULL, (void *) &ecatcheck, (void*) &ctime);
+        osal_thread_create(&thread2, 128000, (void*) &switch_off, (void*) &ctime);
+        /* Create thread to handle slave error handling in OP */
         osal_thread_create(&thread1, 128000, (void*) &ecatcheck, (void*) &ctime);
-        /* start cyclic part */
-        simpletest(argv[1]);
-//        osal_thread_create(&thread1, 128000, (void*) &simpletest, (void*) &ctime);
-
+        /* Start cyclic part */
+        haptic_config(argv[1]);
     }
     else
     {
