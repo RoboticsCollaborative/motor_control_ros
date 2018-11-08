@@ -15,9 +15,10 @@ RDDNode::RDDNode(ros::NodeHandle &node) {
 
 RDDNode::~RDDNode() {}
 
-void RDDNode::set_torque_callback(const std_msgs::Int16& msg)
+void RDDNode::set_torque_callback(const std_msgs::Int16ConstPtr& msg)
 {
-    setTargetTorque(1, msg.data);
+//    setTargetTorque(1, msg.data);
+    ROS_INFO("get torque: %d", msg->data);
 }
 
 void RDDNode::run()
@@ -26,8 +27,8 @@ void RDDNode::run()
     while (ros::ok())
     {
         std_msgs::Float64 position_msg;
-//        position_msg.data = getActualPosition(1);
         position_msg.data = 1.1;
+//        position_msg.data = getActualPosition(1);
         actual_position_pub.publish(position_msg);
 
         std_msgs::Float64 velocity_msg;
@@ -40,19 +41,38 @@ void RDDNode::run()
     }
 }
 
-boost::thread* RDDNode::start_ros(int argc, char **argv)
+void* RDDNode::ros_loop(void *node_ptr)
 {
-    ros::init(argc, argv, "rdd");
-    ros::NodeHandle node("~");
-    RDDNode rdd(node);
-
-    boost::thread* ros_thread = new boost::thread(&RDDNode::run, &rdd);
-    return ros_thread;
+    RDDNode* rdd = (RDDNode*) node_ptr;
+    rdd->run();
+    delete(rdd);
+    return NULL;
 }
 
-//int main(int argc, char** argv)
-//{
-//    boost::thread* ros_thread = RDDNode::start_ros(argc, argv);
-//    ros::spin();
-//    return 0;
-//}
+int RDDNode::start_ros_thread()
+{
+    ros::NodeHandle node("~");
+    RDDNode* rdd = new RDDNode(node);
+    int rv = pthread_create(&ros_thread, &ros_thread_attr, RDDNode::ros_loop, rdd);
+    if (rv != 0)
+    {
+        ROS_FATAL("Unable to create control thread: rv = %d", rv);
+        exit(EXIT_FAILURE);
+    }
+    return rv;
+}
+
+int RDDNode::join_ros_thread(int rv)
+{
+    pthread_join(ros_thread, reinterpret_cast<void **>(&rv));
+    return rv;
+}
+
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "rdd");
+    int rv = RDDNode::start_ros_thread();
+    ros::spin();
+    RDDNode::join_ros_thread(rv);
+    return 0;
+}
