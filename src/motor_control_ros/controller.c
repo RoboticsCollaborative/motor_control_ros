@@ -38,7 +38,7 @@ PACKED_END
  */
 double PDcontroller (double ReferencePosition, double ActualPosition, double ActualVelocity)
 {
-    double Kp = 50, Kd = 0.2, u;
+    double Kp = 10, Kd = 0.2, u;
     u = Kp*(ReferencePosition - ActualPosition) + Kd*(0 - ActualVelocity);
     if (u > 10) u = 10;
     else if(u<-10) u = -10;

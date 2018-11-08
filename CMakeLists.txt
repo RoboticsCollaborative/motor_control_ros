@@ -160,6 +160,7 @@ add_library(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_haptic_run src/${PROJECT_NAME}/haptic_run.cpp)
 add_executable(${PROJECT_NAME}_simple_test src/motor_control_ros/simple_test.c)
+add_executable(${PROJECT_NAME}_simple_test_cpp src/motor_control_ros/simple_test.cpp)
 #add_executable(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 
 
@@ -195,6 +196,8 @@ add_executable(${PROJECT_NAME}_simple_test src/motor_control_ros/simple_test.c)
 target_link_libraries(${PROJECT_NAME}_src ${catkin_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME}_simple_test ${catkin_LIBRARIES})
+
+target_link_libraries(${PROJECT_NAME}_simple_test_cpp ${catkin_LIBRARIES} ${PROJECT_NAME}_rdd_node)
 
 target_link_libraries(${PROJECT_NAME}_haptic_run ${PROJECT_NAME}_src)
 

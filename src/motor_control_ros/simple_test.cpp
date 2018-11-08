@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include "../../include/nodes/rdd_node.h"
+
 extern "C" {
 #include <soem/ethercat.h>
 }
@@ -229,6 +231,7 @@ int main(int argc, char *argv[])
         /* create thread to handle slave error handling in OP */
 //      pthread_create( &thread1, NULL, (void *) &ecatcheck, (void*) &ctime);
         osal_thread_create(&thread1, 128000, (void*) &ecatcheck, (void*) &ctime);
+        boost::thread* ros_thread = RDDNode::start_ros(argc, argv);
         /* start cyclic part */
         simpletest(argv[1]);
     }

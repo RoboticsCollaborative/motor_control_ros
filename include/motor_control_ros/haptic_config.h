@@ -7,8 +7,8 @@
  * Whitney Robotics Lab  9/13/2018
  */
 
-#ifndef _PDO_MAP_H
-#define _PDO_MAP_H
+#ifndef _HAPTIC_CONFIG_H
+#define _HAPTIC_CONFIG_H
 
 #include <stdio.h>
 
@@ -21,7 +21,9 @@ char IOmap[4096];
 int expectedWKC;
 boolean needlf;
 volatile int wkc;
-boolean inOP;
+//* Lock for ros interface *//
+boolean inOP = FALSE;
+//************************//
 uint8 currentgroup = 0;
 double ActualPosition = 0, ActualVelocity = 0, InputTorque = 0, ReferencePosition = 0;
 
