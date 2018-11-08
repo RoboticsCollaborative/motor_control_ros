@@ -3,6 +3,7 @@
 //
 
 #include "../../include/nodes/rdd_node.h"
+#include <pthread.h>
 
 using namespace std;
 
@@ -29,6 +30,7 @@ void RDDNode::run()
         position_msg.data = 1.1;
 //        position_msg.data = getActualPosition(1);
         actual_position_pub.publish(position_msg);
+        cout<<"published"<<endl;
 
         std_msgs::Float64 velocity_msg;
 //        velocity_msg.data = getActualVelocity(1);
@@ -40,19 +42,38 @@ void RDDNode::run()
     }
 }
 
-boost::thread* RDDNode::start_ros(int argc, char **argv)
-{
-    ros::init(argc, argv, "rdd");
-    ros::NodeHandle node("~");
-    RDDNode* rdd = new RDDNode(node);
+//boost::thread* RDDNode::start_ros(int argc, char **argv)
+//{
+//    ros::init(argc, argv, "rdd");
+//    ros::NodeHandle node("~");
+//    RDDNode* rdd = new RDDNode(node);
+//
+//    boost::thread* ros_thread = new boost::thread(&RDDNode::run, rdd);
+//    return ros_thread;
+//}
 
-    boost::thread* ros_thread = new boost::thread(&RDDNode::run, rdd);
-    return ros_thread;
+void* ros_loop(void */*unused_param*/)
+{
+    ros::NodeHandle node("~");
+    RDDNode rdd(node);
+    rdd.run();
+    return NULL;
 }
+
+static pthread_t ros_thread;
+static pthread_attr_t ros_thread_attr;
 
 int main(int argc, char** argv)
 {
-    boost::thread* ros_thread = RDDNode::start_ros(argc, argv);
+//    boost::thread* ros_thread = RDDNode::start_ros(argc, argv);
+    ros::init(argc, argv, "rdd");
+    int rv = pthread_create(&ros_thread, &ros_thread_attr, ros_loop, NULL);
+    if (rv != 0)
+    {
+        ROS_FATAL("Unable to create control thread: rv = %d", rv);
+        exit(EXIT_FAILURE);
+    }
     ros::spin();
-    return 0;
+    pthread_join(ros_thread, reinterpret_cast<void **>(&rv));
+    return rv;
 }

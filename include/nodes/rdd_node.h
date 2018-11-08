@@ -24,7 +24,7 @@ public:
 
     void run();
 
-    static boost::thread* start_ros(int argc, char **argv);
+//    static boost::thread* start_ros(int argc, char **argv);
 
 private:
     void set_torque_callback(const std_msgs::Int16& msg);
