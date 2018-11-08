@@ -26,11 +26,13 @@ void RDDNode::run()
     while (ros::ok())
     {
         std_msgs::Float64 position_msg;
-        position_msg.data = getActualPosition(1);
+        position_msg.data = 1.1;
+//        position_msg.data = getActualPosition(1);
         actual_position_pub.publish(position_msg);
 
         std_msgs::Float64 velocity_msg;
-        velocity_msg.data = getActualVelocity(1);
+//        velocity_msg.data = getActualVelocity(1);
+        velocity_msg.data = 2.1;
         actual_velocity_pub.publish(velocity_msg);
 
         ros::spinOnce();
@@ -42,15 +44,15 @@ boost::thread* RDDNode::start_ros(int argc, char **argv)
 {
     ros::init(argc, argv, "rdd");
     ros::NodeHandle node("~");
-    RDDNode rdd(node);
+    RDDNode* rdd = new RDDNode(node);
 
-    boost::thread* ros_thread = new boost::thread(&RDDNode::run, &rdd);
+    boost::thread* ros_thread = new boost::thread(&RDDNode::run, rdd);
     return ros_thread;
 }
 
-//int main(int argc, char** argv)
-//{
-//    boost::thread* ros_thread = RDDNode::start_ros(argc, argv);
-//    ros::spin();
-//    return 0;
-//}
+int main(int argc, char** argv)
+{
+    boost::thread* ros_thread = RDDNode::start_ros(argc, argv);
+    ros::spin();
+    return 0;
+}

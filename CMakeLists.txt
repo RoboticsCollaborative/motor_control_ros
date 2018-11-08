@@ -147,7 +147,7 @@ include_directories(
 #add_library(${PROJECT_NAME}_haptic_config src/${PROJECT_NAME}/haptic_config.c)
 add_library(${PROJECT_NAME}_ros_interface src/${PROJECT_NAME}/ros_interface.cpp)
 
-add_library(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
+#add_library(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 
 
 ## Add cmake target dependencies of the library
@@ -160,7 +160,7 @@ add_library(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_haptic_run src/${PROJECT_NAME}/haptic_run.cpp)
 add_executable(${PROJECT_NAME}_simple_test src/motor_control_ros/simple_test.c)
-#add_executable(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
+add_executable(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 
 
 ## Rename C++ executable without prefix
