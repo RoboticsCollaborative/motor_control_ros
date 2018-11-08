@@ -5,6 +5,8 @@
 #ifndef MOTOR_CONTROL_ROS_RDD_NODE_H
 #define MOTOR_CONTROL_ROS_RDD_NODE_H
 
+#include <pthread.h>
+
 // ROS
 #include <ros/ros.h>
 #include <std_msgs/Int16.h>
@@ -14,6 +16,8 @@
 #include "../motor_control_ros/ros_interface.h"
 #include <boost/thread/thread.hpp>
 
+static pthread_t ros_thread;
+static pthread_attr_t ros_thread_attr;
 
 class RDDNode
 {
@@ -24,10 +28,13 @@ public:
 
     void run();
 
-//    static boost::thread* start_ros(int argc, char **argv);
-
+    static int start_ros_thread();
+    static int join_ros_thread(int rv);
+    
 private:
-    void set_torque_callback(const std_msgs::Int16& msg);
+    static void* ros_loop(void* node_ptr);
+
+    void set_torque_callback(const std_msgs::Int16ConstPtr& msg);
 
     ros::NodeHandle nh_;
     ros::Subscriber set_torque_sub;
