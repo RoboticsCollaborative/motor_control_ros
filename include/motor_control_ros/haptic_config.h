@@ -7,8 +7,8 @@
  * Whitney Robotics Lab  9/13/2018
  */
 
-#ifndef _PDO_MAP_H
-#define _PDO_MAP_H
+#ifndef _HAPTIC_CONFIG_H
+#define _HAPTIC_CONFIG_H
 
 #include <stdio.h>
 
@@ -17,11 +17,15 @@
 
 #define EC_TIMEOUTMON 500
 
+OSAL_THREAD_HANDLE thread1, thread2, thread3;
+
 char IOmap[4096];
 int expectedWKC;
 boolean needlf;
 volatile int wkc;
-boolean inOP;
+//* Lock for ros interface *//
+boolean inOP = FALSE;
+//************************//
 uint8 currentgroup = 0;
 double ActualPosition = 0, ActualVelocity = 0, InputTorque = 0, ReferencePosition = 0;
 
@@ -39,7 +43,7 @@ typedef struct PACKED
 } out_motor_t;
 PACKED_END
 
-void haptic_config(char *ifname);
+void haptic_config(void *ifnameptr);
 OSAL_THREAD_FUNC ecatcheck( void *ptr );
 OSAL_THREAD_FUNC switch_off( void *ptr );
 

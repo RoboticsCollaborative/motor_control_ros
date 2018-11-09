@@ -19,8 +19,9 @@
 #include "motor_control_ros/controller.h"
 #include "motor_control_ros/config_SDOparam.h"
 
-void haptic_config(char *ifname)
+void haptic_config(void *ifnameptr)
 {
+    char *ifname = (char *) ifnameptr;
     int i, oloop, iloop, chk; //int j;
     needlf = FALSE;
     inOP = FALSE;
@@ -123,7 +124,7 @@ void haptic_config(char *ifname)
 	  	* Initialize static parameters by setting SDO
 	 	*/
 	     	motor_init(motor1);
-		out_motor_t *out_motor = (out_motor_t *)ec_slave[motor1].outputs;
+//		out_motor_t *out_motor = (out_motor_t *)ec_slave[motor1].outputs;
 		in_motor_t *in_motor = (in_motor_t *)ec_slave[motor1].inputs;
 			
 
@@ -133,7 +134,7 @@ void haptic_config(char *ifname)
 		ActualPosition = (in_motor->ac_pos)/Counts_per_radian;
 		ActualPosition = saturation(ActualPosition);
 		ec_send_processdata();
-               	wkc = ec_receive_processdata(EC_TIMEOUTRET);
+             	wkc = ec_receive_processdata(EC_TIMEOUTRET);
 		ReferencePosition = ActualPosition;
 
 		/* Activate motor drive */
@@ -158,10 +159,11 @@ void haptic_config(char *ifname)
 			ActualPosition = (in_motor->ac_pos)/Counts_per_radian;
 			ActualPosition = saturation(ActualPosition);
 			ActualVelocity = (in_motor->ac_vel)/Counts_per_radian/10;
-			InputTorque = PDcontroller(ReferencePosition, ActualPosition, ActualVelocity);
+
+//			InputTorque = PDcontroller(ReferencePosition, ActualPosition, ActualVelocity);
 			/* For damping meassure */
 //			InputTorque = 0.35;
-			out_motor->tg_tau = (int16)(InputTorque * Units_per_Nm);
+//			out_motor->tg_tau = (int16)(InputTorque * Units_per_Nm);
 
 /*
                         for(j = 0 ; j < oloop; j++)
@@ -179,7 +181,7 @@ void haptic_config(char *ifname)
 //			fflush(stdout);
                         needlf = TRUE;
                     }
-//                    osal_usleep(50);
+                    osal_usleep(5000);
 
                 }
                 inOP = FALSE;
