@@ -17,7 +17,7 @@
 
 #define EC_TIMEOUTMON 500
 
-OSAL_THREAD_HANDLE thread1, thread2;
+OSAL_THREAD_HANDLE thread1, thread2, thread3;
 
 char IOmap[4096];
 int expectedWKC;
@@ -43,7 +43,7 @@ typedef struct PACKED
 } out_motor_t;
 PACKED_END
 
-void haptic_config(char *ifname);
+void haptic_config(void *ifnameptr);
 OSAL_THREAD_FUNC ecatcheck( void *ptr );
 OSAL_THREAD_FUNC switch_off( void *ptr );
 
