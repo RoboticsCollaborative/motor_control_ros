@@ -33,12 +33,7 @@ public:
 
     void run();
 
-    static int start_ros_thread();
-    static int join_ros_thread(int rv);
-
 private:
-    static void* ros_loop(void* node_ptr);
-
     void set_torque_callback(const std_msgs::Int16ConstPtr& msg);
 
     ros::NodeHandle nh_;
