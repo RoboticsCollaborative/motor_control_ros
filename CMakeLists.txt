@@ -160,6 +160,7 @@ add_library(${PROJECT_NAME}_simple_test_cpp src/motor_control_ros/simple_test.cp
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_simple_test src/motor_control_ros/simple_test.c)
 add_executable(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
+add_executable(${PROJECT_NAME}_slave_info src/${PROJECT_NAME}/slaveinfo.c)
 
 
 ## Rename C++ executable without prefix
@@ -194,6 +195,8 @@ add_executable(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 target_link_libraries(${PROJECT_NAME}_src ${catkin_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME}_simple_test ${catkin_LIBRARIES})
+
+target_link_libraries(${PROJECT_NAME}_slave_info ${catkin_LIBRARIES})
 
 #target_link_libraries(${PROJECT_NAME}_simple_test_cpp ${catkin_LIBRARIES} ${PROJECT_NAME}_rdd_node)
 
