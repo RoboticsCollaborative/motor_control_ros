@@ -51,11 +51,19 @@ void RDDNode::run()
 
 void start_driver(char* ifname)
 {
-    osal_thread_create(&thread2, 128000, (void*) &switch_off, (void*) &ctime);
+    
     /* Create thread to handle slave error handling in OP */
     osal_thread_create(&thread1, 128000, (void*) &ecatcheck, (void*) &ctime);
+    /* Create thread to shut off motor drive */
+    osal_thread_create(&thread2, 128000, (void*) &switch_off, (void*) &ctime);
     /* Start cyclic part */
     osal_thread_create(&thread3, 128000, (void*) &haptic_config, (void*) ifname);
+
+    /* Deploy iso-core to ethercat thread */
+    cpu_set_t CPU3;
+    CPU_ZERO(&CPU3);
+    CPU_SET(3, &CPU3);
+    pthread_setaffinity_np(thread3, sizeof(CPU3), &CPU3);
 }
 
 void test_ros()
