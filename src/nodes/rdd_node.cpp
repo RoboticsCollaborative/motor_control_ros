@@ -33,14 +33,14 @@ void RDDNode::run()
         }
         ROS_INFO("driver ready");
         std_msgs::Float64 position_msg;
-        position_msg.data = 1.1;
-//        position_msg.data = getActualPosition(1);
+//        position_msg.data = 1.1;
+        position_msg.data = getActualPosition(1);
 	    ROS_INFO("get position");
         actual_position_pub.publish(position_msg);
 
         std_msgs::Float64 velocity_msg;
-        velocity_msg.data = 2.1;
-//        velocity_msg.data = getActualVelocity(1);
+//        velocity_msg.data = 2.1;
+        velocity_msg.data = getActualVelocity(1);
 	    ROS_INFO("get velocity");
         actual_velocity_pub.publish(velocity_msg);
 
@@ -69,23 +69,23 @@ void test_ros()
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "rdd");
-    test_ros();
+//    test_ros();
 
-//    printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
-//
-//    if (argc > 1)
-//    {
-//        start_driver(argv[1]);
-//
-//        ros::NodeHandle node("~");
-//        RDDNode rdd(node);
-//        rdd.run();
-//
-//    }
-//    else
-//    {
-//        printf("Usage: simple_test ifname1\nifname = eth0 for example\n");
-//    }
+    printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
+
+    if (argc > 1)
+    {
+        start_driver(argv[1]);
+
+        ros::NodeHandle node("~");
+        RDDNode rdd(node);
+        rdd.run();
+
+    }
+    else
+    {
+        printf("Usage: simple_test ifname1\nifname = eth0 for example\n");
+    }
 
     return 0;
 }
