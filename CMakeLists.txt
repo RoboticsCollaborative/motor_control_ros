@@ -119,13 +119,13 @@ catkin_package(
 
 add_library(${PROJECT_NAME}_src
 #        include/${PROJECT_NAME}/config_map.h
-#        include/${PROJECT_NAME}/config_SDOparam.h
+#        include/${PROJECT_NAME}/slave_init.h
 #        include/${PROJECT_NAME}/controller.h
 #        include/${PROJECT_NAME}/ecattype.h
 #        include/${PROJECT_NAME}/ethercat.h
 #        include/${PROJECT_NAME}/haptic_config.h
         src/${PROJECT_NAME}/config_map.c
-        src/${PROJECT_NAME}/config_SDOparam.c
+        src/${PROJECT_NAME}/slave_init.c
         src/${PROJECT_NAME}/controller.c
         src/${PROJECT_NAME}/haptic_config.c
 #        src/${PROJECT_NAME}/ros_interface.cpp

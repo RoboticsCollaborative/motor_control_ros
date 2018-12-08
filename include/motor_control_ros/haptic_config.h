@@ -11,22 +11,32 @@
 #define _HAPTIC_CONFIG_H
 
 #include <stdio.h>
+#include <pthread.h>
+#include <sys/time.h>
+#include <sched.h>
+#include <time.h>
 
 #include <soem/ethercat.h>
 //#include "motor_control_ros/ethercat.h"
 
 #define EC_TIMEOUTMON 500
+#define NSEC_PER_SEC 1000000000
 
-OSAL_THREAD_HANDLE thread1, thread2, thread3;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+OSAL_THREAD_HANDLE thread1, thread2, thread3, RTthread;
 
 char IOmap[4096];
 int expectedWKC;
+int64 toff;
 boolean needlf;
 volatile int wkc;
+int dorun = 0;
 //* Lock for ros interface *//
 boolean inOP = FALSE;
 //************************//
 uint8 currentgroup = 0;
+uint16 motor1;
 double ActualPosition = 0, ActualVelocity = 0, InputTorque = 0, ReferencePosition = 0;
 
 typedef struct PACKED
@@ -43,8 +53,11 @@ typedef struct PACKED
 } out_motor_t;
 PACKED_END
 
+struct sched_param schedp;
+
 void haptic_config(void *ifnameptr);
 OSAL_THREAD_FUNC ecatcheck( void *ptr );
 OSAL_THREAD_FUNC switch_off( void *ptr );
+OSAL_THREAD_FUNC_RT ecatthread( void *ptr );
 
 #endif //_HAPTIC_CONFIG_H

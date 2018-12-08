@@ -40,8 +40,8 @@ double PDcontroller (double ReferencePosition, double ActualPosition, double Act
 {
     double Kp = 10, Kd = 0.2, u;
     u = Kp*(ReferencePosition - ActualPosition) + Kd*(0 - ActualVelocity);
-    if (u > 10) u = 10;
-    else if(u<-10) u = -10;
+//    if (u > 10) u = 10;
+//    else if(u<-10) u = -10;
     return u;
 }
 

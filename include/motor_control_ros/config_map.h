@@ -18,7 +18,7 @@
 
 
 int motor_setup (uint16 slave);
-double saturation (double encoder);
+//double saturation (double encoder);
 //int TargetPosition (uint16 slave, int32 value);
 //int TargetTorque (uint16, int16);
 //int GetActualPosition (uint16 slave);

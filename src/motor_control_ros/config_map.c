@@ -130,6 +130,7 @@ int motor_setup (uint16 slave)
  * @param[in] encoder	=  Raw value.
  * return saturated value.
  */
+/*
 double saturation (double encoder)
 {
     double val = 2*M_PI; 
@@ -140,6 +141,7 @@ double saturation (double encoder)
     }
     return encoder;
 }
+*/
 
 /** Set target position
  * @param[in] slave	=  Slave number
