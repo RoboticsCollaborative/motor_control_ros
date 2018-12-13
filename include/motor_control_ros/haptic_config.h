@@ -36,9 +36,12 @@ int dorun = 0;
 boolean inOP = FALSE;
 //************************//
 uint8 currentgroup = 0;
-uint16 motor1;
-double ActualPosition = 0, ActualVelocity = 0, InputTorque = 0, ReferencePosition = 0;
 
+uint16 motor1, motor2;
+double ActualPosition1 = 0, ActualVelocity1 = 0, InputTorque1 = 0, ReferencePosition1 = 0;
+double ActualPosition2 = 0, ActualVelocity2 = 0, InputTorque2 = 0, ReferencePosition2 = 0;
+
+/* Motors */
 typedef struct PACKED
 {
     int32 ac_pos; // Actual position (6064)

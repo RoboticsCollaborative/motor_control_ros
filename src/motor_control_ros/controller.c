@@ -13,7 +13,7 @@
 
 #include <soem/ethercat.h>
 //#include "motor_control_ros/ethercat.h"
-#include "motor_control_ros/config_map.h"
+#include "motor_control_ros/slave_init.h"
 
 /*
 typedef struct PACKED

@@ -118,13 +118,11 @@ catkin_package(
 ###########
 
 add_library(${PROJECT_NAME}_src
-#        include/${PROJECT_NAME}/config_map.h
 #        include/${PROJECT_NAME}/slave_init.h
 #        include/${PROJECT_NAME}/controller.h
 #        include/${PROJECT_NAME}/ecattype.h
 #        include/${PROJECT_NAME}/ethercat.h
 #        include/${PROJECT_NAME}/haptic_config.h
-        src/${PROJECT_NAME}/config_map.c
         src/${PROJECT_NAME}/slave_init.c
         src/${PROJECT_NAME}/controller.c
         src/${PROJECT_NAME}/haptic_config.c
@@ -141,7 +139,6 @@ include_directories(
 )
 
 ## Declare a C++ library
-#add_library(${PROJECT_NAME}_config_map src/${PROJECT_NAME}/config_map.c)
 #add_library(${PROJECT_NAME}_config_SDOparam src/${PROJECT_NAME}/config_SDOparam.c)
 #add_library(${PROJECT_NAME}_controller src/${PROJECT_NAME}/controller.c)
 #add_library(${PROJECT_NAME}_haptic_config src/${PROJECT_NAME}/haptic_config.c)
@@ -176,18 +173,17 @@ add_executable(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 ## Specify libraries to link a library or executable target against
 #target_link_libraries(${PROJECT_NAME}_config_SDOparam
 #        ${catkin_LIBRARIES}
-#        ${PROJECT_NAME}_config_map
+#        ${PROJECT_NAME}_slave_init
 #        )
 #
 #target_link_libraries(${PROJECT_NAME}_controller
 #        ${catkin_LIBRARIES}
-#        ${PROJECT_NAME}_config_map
+#        ${PROJECT_NAME}_slave_init
 #        )
 #
 #target_link_libraries(${PROJECT_NAME}_haptic_config
 #        ${catkin_LIBRARIES}
-#        ${PROJECT_NAME}_config_map
-#        ${PROJECT_NAME}_config_SDOparam
+#        ${PROJECT_NAME}_slave_init
 #        ${PROJECT_NAME}_controller
 #        )
 #

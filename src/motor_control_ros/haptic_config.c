@@ -13,7 +13,6 @@
 #include <soem/ethercat.h>
 //#include "motor_control_ros/ethercat.h"
 
-#include "motor_control_ros/config_map.h"
 #include "motor_control_ros/ecattype.h"
 #include "motor_control_ros/haptic_config.h"
 #include "motor_control_ros/controller.h"
@@ -52,14 +51,30 @@ void haptic_config(void *ifnameptr)
 	    	for (slave = 1; slave <= ec_slavecount; slave ++)
 	    	{
 		    if ((ec_slave[slave].eep_man == 0x000000ab) && (ec_slave[slave].eep_id == 0x00001110))
-		    {
-			motor1 = slave;	
-		        /* CompleteAccess disabled for Bel driver */
-	    		ec_slave[motor1].CoEdetails ^= ECT_COEDET_SDOCA;
-			/* Set PDO mapping */
-		    	printf("Found %s at position %d\n", ec_slave[motor1].name, motor1);
-			motor_setup(motor1);
+		    {	
+			uint32 serial_num;
+			READ_SDO(slave, 0x1018, 4, serial_num, "Amplifier's Serial Number");
+			if (serial_num == 0x2098302)
+			{
+			    motor1 = slave;
+		            /* CompleteAccess disabled for Bel driver */
+	    		    ec_slave[motor1].CoEdetails ^= ECT_COEDET_SDOCA;
+			    /* Set PDO mapping */
+		    	    printf("Found %s at position %d\n", ec_slave[motor1].name, motor1);
+			    motor_setup(motor1);
+			}
+			if (serial_num == 0x2098303)
+			{
+			    motor2 = slave;
+		            /* CompleteAccess disabled for Bel driver */
+	    		    ec_slave[motor2].CoEdetails ^= ECT_COEDET_SDOCA;
+			    /* Set PDO mapping */
+		    	    printf("Found %s at position %d\n", ec_slave[motor1].name, motor2);
+			    motor_setup(motor2);
+			}
+	
 		    }
+
 	    	}
 	    }
 
@@ -76,6 +91,17 @@ void haptic_config(void *ifnameptr)
             printf("Request operational state for all slaves\n");
             expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
             printf("Calculated workcounter %d\n", expectedWKC);
+
+	    /**
+	     * Initialize motor parameters
+	     */
+	    motor_init(motor1);
+	    motor_init(motor2);
+
+
+	    /* Activate motor drive */
+	    WRITE_SDO(motor1, 0x6040, 0, BUF16, 15, "*Control word: motor1*");
+
 
 	    /* Going operational */
             ec_slave[0].state = EC_STATE_OPERATIONAL;
@@ -100,25 +126,7 @@ void haptic_config(void *ifnameptr)
 		remove(filename);
 		fp = fopen(filename, "w");
 */
-	  	/**
-	  	* Map PDO address with struct pointer
-	 	*/
-	     	motor_init(motor1);
 
-		/* Initialize origin (By SDO) */
-/*
-		ec_send_processdata();
-               	wkc = ec_receive_processdata(EC_TIMEOUTRET);
-		ActualPosition = (in_motor->ac_pos)/Counts_per_radian;
-		ActualVelocity = (in_motor->ac_vel)/Counts_per_radian/10;
-		out_motor->tg_tau = (int16)0;
-		ec_send_processdata();
-             	wkc = ec_receive_processdata(EC_TIMEOUTRET);
-		ReferencePosition = ActualPosition;
-*/
-		/* Activate motor drive */
-		WRITE_SDO(motor1, 0x6040, 0, BUF16, 15, "*Control word: motor1*");
-	
 	        /* activate cyclic process data */
 		dorun = 1;
 
@@ -127,7 +135,7 @@ void haptic_config(void *ifnameptr)
 		{
 		    while(inOP && dorun)
             	    {
-		        printf("ac_pos: %lf, ac_vel: %lf, cmd_tau: %lf, WKC %d , O:\r", ActualPosition, ActualVelocity, InputTorque, wkc);
+		        printf("ref1: %lf, ac_pos1: %lf, ac_vel1: %lf, ref2: %lf, ac_pos2: %lf, ac_vel2: %lf\r", ReferencePosition1, ActualPosition1, ActualVelocity1, ReferencePosition2, ActualPosition2, ActualVelocity2);
                     }
 		}
             }
@@ -217,9 +225,38 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
 	osal_usleep(10000);
     }
 
-    out_motor_t *out_motor = (out_motor_t *)ec_slave[motor1].outputs;
-    in_motor_t *in_motor = (in_motor_t *)ec_slave[motor1].inputs;
-	  
+    ec_send_processdata();
+    wkc = ec_receive_processdata(EC_TIMEOUTRET);
+
+    /* motor1 */
+    out_motor_t *out_motor1 = (out_motor_t *)ec_slave[motor1].outputs;
+    in_motor_t *in_motor1 = (in_motor_t *)ec_slave[motor1].inputs;
+    /* motor2 */
+    out_motor_t *out_motor2 = (out_motor_t *)ec_slave[motor2].outputs;
+    in_motor_t *in_motor2 = (in_motor_t *)ec_slave[motor2].inputs;
+	
+    
+    /* Initialize origin (By SDO) */
+    ec_send_processdata();
+    wkc = ec_receive_processdata(EC_TIMEOUTRET);
+
+    // motor1
+    wkc = ec_receive_processdata(EC_TIMEOUTRET);
+    ActualPosition1 = (in_motor1->ac_pos)/COUNTS_PER_RADIAN;
+    ReferencePosition1 = ActualPosition1;
+    ActualVelocity1 = (in_motor1->ac_vel)/COUNTS_PER_RADIAN/10;
+    out_motor1->tg_tau = (int16)0;
+
+    // motor2
+    ActualPosition2 = (in_motor2->ac_pos)/COUNTS_PER_RADIAN;
+    ReferencePosition2 = ActualPosition2;
+    ActualVelocity2 = (in_motor2->ac_vel)/COUNTS_PER_RADIAN/10;
+    out_motor2->tg_tau = (int16)0;
+    
+    ec_send_processdata();
+    wkc = ec_receive_processdata(EC_TIMEOUTRET);
+
+  
     while(!dorun)
     {
 	osal_usleep(10000);
@@ -228,7 +265,6 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
 
     ec_send_processdata();
 
-	
     while(inOP)
     {
 	/* calculate next cycle start */
@@ -243,9 +279,12 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
 	    /* Now running PDO */
             {
 
-	        /* Set target position */			
-		ActualPosition = (in_motor->ac_pos)/Counts_per_radian;
-		ActualVelocity = (in_motor->ac_vel)/Counts_per_radian/10;
+		/* motor1 */			
+		ActualPosition1 = (in_motor1->ac_pos)/COUNTS_PER_RADIAN;
+		ActualVelocity1 = (in_motor1->ac_vel)/COUNTS_PER_RADIAN/10;
+		/* motor2 */			
+		ActualPosition2 = (in_motor2->ac_pos)/COUNTS_PER_RADIAN;
+		ActualVelocity2 = (in_motor2->ac_vel)/COUNTS_PER_RADIAN/10;
 
 //		InputTorque = PDcontroller(ReferencePosition, ActualPosition, ActualVelocity);
 		/* For damping meassure */

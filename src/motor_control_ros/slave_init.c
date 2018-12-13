@@ -13,9 +13,98 @@
 
 #include <soem/ethercat.h>
 //#include "motor_control_ros/ethercat.h"
-#include "motor_control_ros/config_map.h"
 #include "motor_control_ros/ecattype.h"
 
+/** SDO transfer functions 
+ *
+ * @param[in] slave	=  Slave number.
+ * @param[in] index	=  Index to write.
+ * @param[in] subindex	=  Subindex to write, must be 0 or 1 if CA is used.	
+ * @param[in] value	=  Value to write.
+ * @return wkc after a single SDO is trasfered.
+ */
+
+int SDO_write8 (uint16 slave, uint16 index, uint8 subindex, uint8 value)
+{
+    int wkc;
+    wkc = ec_SDOwrite (slave, index, subindex, FALSE, sizeof(value), &value, EC_TIMEOUTRXM);
+    return wkc;
+}
+
+int SDO_write16 (uint16 slave, uint16 index, uint8 subindex, uint16 value)
+{
+    int wkc;
+    wkc = ec_SDOwrite (slave, index, subindex, FALSE, sizeof(value), &value, EC_TIMEOUTRXM);
+    return wkc;
+}
+
+int SDO_write32 (uint16 slave, uint16 index, uint8 subindex, uint32 value)
+{
+    int wkc;
+    wkc = ec_SDOwrite (slave, index, subindex, FALSE, sizeof(value), &value, EC_TIMEOUTRXM);
+    return wkc;
+}
+
+
+/** Selective PDO mapping
+ *
+ * @param[in] slave	=  Slave number.
+ * @param[out] wkc 	=  Working counter.
+ * */
+int pdo_map (uint16 slave)
+{
+    int wkc = 0;
+    
+    printf ("Motor drive setup\n");
+
+    wkc += SDO_write8  (slave, 0x1C12, 0, 0);
+    wkc += SDO_write8  (slave, 0x1C13, 0, 0);
+
+    /* CSP Inputs */
+    wkc += SDO_write8  (slave, 0x1A00, 0, 0);
+    wkc += SDO_write32 (slave, 0x1A00, 1, 0x60640020); //Actual position
+    wkc += SDO_write32 (slave, 0x1A00, 2, 0x606C0020); //Actual velocity
+    wkc += SDO_write8  (slave, 0x1A00, 0, 2);
+
+    /* CSP Outputs */
+    wkc += SDO_write8  (slave, 0x1600, 0, 0);
+    wkc += SDO_write32 (slave, 0x1600, 1, 0x607A0020); //Target position
+    wkc += SDO_write32 (slave, 0x1600, 2, 0x60710010); //Target torque
+    wkc += SDO_write8  (slave, 0x1600, 0, 2);
+
+    wkc += SDO_write16 (slave, 0x1C12, 1, 0X1600);
+    wkc += SDO_write8  (slave, 0x1C12, 0, 1);
+
+    wkc += SDO_write16 (slave, 0x1C13, 1, 0x1A00);
+    wkc += SDO_write8  (slave, 0x1C13, 0, 1);
+
+    /* Explicitly set flags that are (probably) invalid in EEPROM */
+    ec_slave[slave].SM[2].SMflags = 0x10024l;
+
+    /* Explicitly disable the sync manager that are activated by EEPROM */
+    ec_slave[slave].SM[4].StartAddr = 0;
+    ec_slave[slave].SM[5].StartAddr = 0;
+
+    return wkc;
+}
+
+
+/** PDO mapping for motor
+ *
+ * @param[in] slave	=  Slave number.
+ * @return -1 if motor setup fails.
+ */
+int motor_setup(uint16 motor)
+{
+    ec_slave[motor].PO2SOconfig = pdo_map;
+}
+
+
+/** Initialize motor parameters
+ *
+ * @param[in] motor	=  Slave number.
+ * @return -1 if motor setup fails.
+ */
 int motor_init(uint16 motor)
 {
 
@@ -33,4 +122,5 @@ int motor_init(uint16 motor)
 
     return 0;
 }
+
 

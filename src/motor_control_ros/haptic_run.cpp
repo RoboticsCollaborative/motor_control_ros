@@ -24,16 +24,15 @@ int main(int argc, char *argv[])
     if (argc > 1)
     {
 	dorun = 0;
-	int ctime = 1000; // 250us cycle time
+	int ctime = 500; // 500us cycle time
 	/* Create RT thread (priority = 40) for PDO transfer */
 	osal_thread_create_rt(&RTthread, STACK_SIZE, (void*) &ecatthread, (void*) &ctime);
 	/* Deploy Core-Iso to ecatthread */
-/*
 	cpu_set_t CPU3;
 	CPU_ZERO(&CPU3);
 	CPU_SET(3, &CPU3);
 	pthread_setaffinity_np(RTthread, sizeof(CPU3), &CPU3);
-*/
+
         /* Create thread to shut off motor drive */
         osal_thread_create(&thread2, STACK_SIZE, (void*) &switch_off, (void*) &ctime);
         /* Create thread to handle slave error handling in OP */

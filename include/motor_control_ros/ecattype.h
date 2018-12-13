@@ -16,8 +16,8 @@
 #include <soem/ethercat.h>
 //#include "motor_control_ros/ethercat.h"
 
-#define Counts_per_radian 52151.8917
-#define Units_per_Nm 5000
+#define COUNTS_PER_RADIAN 52151.8917
+#define UNITS_PER_NM 5000
 
 /* Buffers for SDO transfer */
 #define READ_SDO(slave, idx, sub, buf, comment) \
