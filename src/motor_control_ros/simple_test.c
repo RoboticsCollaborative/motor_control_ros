@@ -23,6 +23,19 @@ boolean needlf;
 volatile int wkc;
 boolean inOP;
 uint8 currentgroup = 0;
+uint16 stat1 = 0, stat2 = 0;
+int16 val1 = 0, val2 = 0;
+
+/* Pressure sensor */
+typedef struct PACKED
+{
+    uint8 stat1;
+    int16 val1;
+    uint8 stat2;
+    int16 val2;
+} in_pressure_s;
+PACKED_END
+
 
 void simpletest(char *ifname)
 {
@@ -82,8 +95,12 @@ void simpletest(char *ifname)
          {
             printf("Operational state reached for all slaves.\n");
             inOP = TRUE;
+
+	    in_pressure_s *in_pressure = (in_pressure_s *)ec_slave[2].inputs;
+	    printf("Pressure sensor setup\n");
+	    
                 /* cyclic loop */
-            for(i = 1; i <= 10000; i++)
+            for(i = 1; i <= 20000; i++)
             {
                ec_send_processdata();
                wkc = ec_receive_processdata(EC_TIMEOUTRET);
@@ -91,6 +108,11 @@ void simpletest(char *ifname)
                     if(wkc >= expectedWKC)
                     {
                         printf("Processdata cycle %4d, WKC %d , O:", i, wkc);
+			
+			stat1 = in_pressure->stat1;
+			val1 = in_pressure->val1;
+			stat2 = in_pressure->stat2;
+			val2 = in_pressure->val2;
 
                         for(j = 0 ; j < oloop; j++)
                         {
@@ -102,7 +124,8 @@ void simpletest(char *ifname)
                         {
                             printf(" %2.2x", *(ec_slave[0].inputs + j));
                         }
-                        printf(" T:%"PRId64"\r",ec_DCtime);
+                        printf(" T:%"PRId64"" ,ec_DCtime);
+			printf(" stat1: %d, val1: %d, stat2: %d, val2: %d\r", stat1, val1, stat2, val2);
                         needlf = TRUE;
                     }
                     osal_usleep(20000);

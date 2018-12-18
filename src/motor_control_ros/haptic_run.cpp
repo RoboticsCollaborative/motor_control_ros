@@ -23,10 +23,10 @@ int main(int argc, char *argv[])
 
     if (argc > 1)
     {
-	dorun = 0;
-	int ctime = 500; // 500us cycle time
+	int ctime_rt = 500; 	// 500us cycle time
+	int ctime = 2000;	// 2000us cycle time
 	/* Create RT thread (priority = 40) for PDO transfer */
-	osal_thread_create_rt(&RTthread, STACK_SIZE, (void*) &ecatthread, (void*) &ctime);
+	osal_thread_create_rt(&RTthread, STACK_SIZE, (void*) &ecatthread, (void*) &ctime_rt);
 	/* Deploy Core-Iso to ecatthread */
 	cpu_set_t CPU3;
 	CPU_ZERO(&CPU3);

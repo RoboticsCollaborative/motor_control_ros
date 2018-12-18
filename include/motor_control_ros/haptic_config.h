@@ -31,17 +31,22 @@ int expectedWKC;
 int64 toff;
 boolean needlf;
 volatile int wkc;
-int dorun = 0;
 //* Lock for ros interface *//
 boolean inOP = FALSE;
 //************************//
 uint8 currentgroup = 0;
 
-uint16 motor1, motor2;
+uint16 motor1 = 0, motor2 = 0, psensor = 0;
 double ActualPosition1 = 0, ActualVelocity1 = 0, InputTorque1 = 0, ReferencePosition1 = 0;
 double ActualPosition2 = 0, ActualVelocity2 = 0, InputTorque2 = 0, ReferencePosition2 = 0;
+uint8 StatA = 0, StatB = 0;
+int16 ValA = 0, ValB = 0;
+/* Tempory test */
+//int time_stamp[40000], cycle_stamp[40000];
+//double traj[40000];
 
-/* Motors */
+/********************************************************************************************/
+/* Torque Mode */
 typedef struct PACKED
 {
     int32 ac_pos; // Actual position (6064)
@@ -55,6 +60,48 @@ typedef struct PACKED
     int16 tg_tau; // Target torque (6071)
 } out_motor_t;
 PACKED_END
+
+/* CSP Mode */
+typedef struct PACKED
+{
+    uint16 stat_wd;	// Status word (0x6041)
+    int32 act_pos;	// Position actual value (0x6064)
+    int32 pos_err;	// Position error (0x60F4)
+    int32 act_vel;	// Actual velocity (0x606C)
+    int16 act_tau;	// Torque actual value (0x6077)
+} in_motor_p;
+
+typedef struct PACKED
+{
+    uint16 ctrl_wd;	// Control word (0x6040)
+    int32 tg_pos;	// Target position (0x607A)
+    int32 vel_off;	// Velocity offset (velocity feedforward) (0x60B1)
+    int16 tau_off;	// Torque offset (acceleration feedforward) (0x60B2)
+} out_motor_p;
+PACKED_END
+
+/* Pressure Sensor (EL3102) */
+typedef struct PACKED
+{
+    uint8 stat1;
+    int16 val1;
+    uint8 stat2;
+    int16 val2;
+} in_pressure_s;
+PACKED_END
+
+/* Test (EL3702) */
+typedef struct PACKED
+{
+    uint16 cyc1;
+    int16 val1;
+    uint16 cyc2;
+    int16 val2;
+    uint32 latch;
+} in_test_s;
+PACKED_END
+/********************************************************************************************/
+
 
 struct sched_param schedp;
 

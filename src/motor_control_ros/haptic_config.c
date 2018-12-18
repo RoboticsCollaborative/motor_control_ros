@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include <math.h>
 #include <soem/ethercat.h>
 //#include "motor_control_ros/ethercat.h"
 
@@ -72,9 +73,11 @@ void haptic_config(void *ifnameptr)
 		    	    printf("Found %s at position %d\n", ec_slave[motor1].name, motor2);
 			    motor_setup(motor2);
 			}
-	
 		    }
-
+		    if ((ec_slave[slave].eep_man == 0x00000002) && (ec_slave[slave].eep_id == 0x0c1e3052) && (slave == 4))
+		    {
+			psensor = slave;
+		    }
 	    	}
 	    }
 
@@ -100,7 +103,7 @@ void haptic_config(void *ifnameptr)
 
 
 	    /* Activate motor drive */
-	    WRITE_SDO(motor1, 0x6040, 0, BUF16, 15, "*Control word: motor1*");
+//	    WRITE_SDO(motor1, 0x6040, 0, BUF16, 15, "*Control word: motor1*");
 
 
 	    /* Going operational */
@@ -119,23 +122,13 @@ void haptic_config(void *ifnameptr)
             	printf("Operational state reached for all slaves.\n");
             	inOP = TRUE;
 
-		/* Output torque and velocity values to a file */
-/*
-		FILE *fp = NULL;
-		char *filename = "/home/protectli/velocity.dat";
-		remove(filename);
-		fp = fopen(filename, "w");
-*/
-
-	        /* activate cyclic process data */
-		dorun = 1;
-
                 /* cyclic loop */
 	        if(wkc >= expectedWKC)
 		{
-		    while(inOP && dorun)
+		    while(inOP)
             	    {
-		        printf("ref1: %lf, ac_pos1: %lf, ac_vel1: %lf, ref2: %lf, ac_pos2: %lf, ac_vel2: %lf\r", ReferencePosition1, ActualPosition1, ActualVelocity1, ReferencePosition2, ActualPosition2, ActualVelocity2);
+		        printf("act_pos1: %lf, act_vel1: %lf, act_pos2: %lf, act_vel2: %lf, StatA: %d, ValA: %d, StatB: %d, ValB: %d\r", ActualPosition1, ActualVelocity1, ActualPosition2, ActualVelocity2, StatA, ValA, StatB, ValB); 
+//		    osal_usleep(5000);
                     }
 		}
             }
@@ -209,6 +202,11 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
     int ht;
     int64 cycletime;
 
+    /* Time stamp */
+//    static uint32 Time0 = 0;
+//    static uint32 Time1 = 0;
+//    static uint32 Time_cycle = 0;
+
 //    pthread_mutex_lock(&mutex);
 //    gettimeofday(&ts, NULL);
     clock_gettime(CLOCK_MONOTONIC, &ts);  
@@ -218,52 +216,49 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
     ts.tv_nsec = ht * 1000000;
     cycletime = *(int*)ptr * 1000; /* cycletime in ns */
     toff = 0;
-    dorun = 0;
 
+
+    /* Waiting for OP mode */
     while(!inOP)
     {
-	osal_usleep(10000);
+//	osal_usleep(10000);
     }
-
-    ec_send_processdata();
-    wkc = ec_receive_processdata(EC_TIMEOUTRET);
 
     /* motor1 */
-    out_motor_t *out_motor1 = (out_motor_t *)ec_slave[motor1].outputs;
-    in_motor_t *in_motor1 = (in_motor_t *)ec_slave[motor1].inputs;
+//    out_motor_p *out_motor1 = (out_motor_p *)ec_slave[motor1].outputs;
+    in_motor_p *in_motor1 = (in_motor_p *)ec_slave[motor1].inputs;
     /* motor2 */
-    out_motor_t *out_motor2 = (out_motor_t *)ec_slave[motor2].outputs;
-    in_motor_t *in_motor2 = (in_motor_t *)ec_slave[motor2].inputs;
-	
-    
+//    out_motor_p *out_motor2 = (out_motor_p *)ec_slave[motor2].outputs;
+    in_motor_p *in_motor2 = (in_motor_p *)ec_slave[motor2].inputs;
+
+    /* pressure sensor */
+    in_pressure_s *in_pressure = (in_pressure_s *)ec_slave[psensor].inputs;	
+ 
     /* Initialize origin (By SDO) */
-    ec_send_processdata();
-    wkc = ec_receive_processdata(EC_TIMEOUTRET);
 
     // motor1
-    wkc = ec_receive_processdata(EC_TIMEOUTRET);
-    ActualPosition1 = (in_motor1->ac_pos)/COUNTS_PER_RADIAN;
+//    out_motor1->ctrl_wd = (uint16)0;
+//    out_motor1->tg_pos = (int32)0;
+//    out_motor1->vel_off = (int32)0;
+//    out_motor1->tau_off = (int16)0;
+    ActualPosition1 = (in_motor1->act_pos)/COUNTS_PER_RADIAN;
     ReferencePosition1 = ActualPosition1;
-    ActualVelocity1 = (in_motor1->ac_vel)/COUNTS_PER_RADIAN/10;
-    out_motor1->tg_tau = (int16)0;
-
+    ActualVelocity1 = (in_motor1->act_vel)/COUNTS_PER_RADIAN/10;
+ 
     // motor2
-    ActualPosition2 = (in_motor2->ac_pos)/COUNTS_PER_RADIAN;
+//    out_motor2->ctrl_wd = (uint16)0;
+//    out_motor2->tg_pos = (int32)0;
+//    out_motor2->vel_off = (int32)0;
+//    out_motor2->tau_off = (int16)0;
+    ActualPosition2 = (in_motor2->act_pos)/COUNTS_PER_RADIAN;
     ReferencePosition2 = ActualPosition2;
-    ActualVelocity2 = (in_motor2->ac_vel)/COUNTS_PER_RADIAN/10;
-    out_motor2->tg_tau = (int16)0;
-    
+    ActualVelocity2 = (in_motor2->act_vel)/COUNTS_PER_RADIAN/10;
+
     ec_send_processdata();
     wkc = ec_receive_processdata(EC_TIMEOUTRET);
 
-  
-    while(!dorun)
-    {
-	osal_usleep(10000);
-    }
-
-
-    ec_send_processdata();
+//    int i=0;
+//    for(i=0; i<30000; i++)
 
     while(inOP)
     {
@@ -272,28 +267,66 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
 	/* wait to cycle start */
 //	pthread_cond_timedwait(&cond, &mutex, &ts);
 	clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, &tleft);
-	if (dorun > 0)
-	{
-            wkc = ec_receive_processdata(EC_TIMEOUTRET);
-	    dorun ++;
-	    /* Now running PDO */
-            {
 
-		/* motor1 */			
-		ActualPosition1 = (in_motor1->ac_pos)/COUNTS_PER_RADIAN;
-		ActualVelocity1 = (in_motor1->ac_vel)/COUNTS_PER_RADIAN/10;
-		/* motor2 */			
-		ActualPosition2 = (in_motor2->ac_pos)/COUNTS_PER_RADIAN;
-		ActualVelocity2 = (in_motor2->ac_vel)/COUNTS_PER_RADIAN/10;
+	/* Time stamp */
+/*
+	Time0 = osal_current_time().sec*1000000 + osal_current_time().usec;
+	Time_cycle = Time0 - Time1;
+	Time1 = Time0;
+	time_stamp[i] = Time0;
+	cycle_stamp[i] = Time_cycle;
+*/
 
-//		InputTorque = PDcontroller(ReferencePosition, ActualPosition, ActualVelocity);
-		/* For damping meassure */
-//		out_motor->tg_tau = (int16)(InputTorque * Units_per_Nm);
-                needlf = TRUE;
-	    }
-	    ec_send_processdata();
-	}
+	/* Cyclic data */
+	ec_send_processdata();
+        wkc = ec_receive_processdata(EC_TIMEOUTRET);
+		
+	/* motor1 */			
+//	out_motor1->ctrl_wd = (uint16)0;
+//	out_motor1->tg_pos = (int32)0;
+//	out_motor1->tg_pos = (int32)(COUNTS_PER_RADIAN*sin(3.14/2000*i)); 
+//	out_motor1->vel_off = (int32)0;
+//	out_motor1->tau_off = (int16)0;
+	ActualPosition1 = (in_motor1->act_pos)/COUNTS_PER_RADIAN;
+	ReferencePosition1 = ActualPosition1;
+	ActualVelocity1 = (in_motor1->act_vel)/COUNTS_PER_RADIAN/10;
+ 
+	/* motor2 */			
+//	out_motor2->ctrl_wd = (uint16)15;
+//	out_motor2->tg_pos = (int32)0;
+//	out_motor2->vel_off = (int32)0;
+//	out_motor2->tau_off = (int16)0;
+	ActualPosition2 = (in_motor2->act_pos)/COUNTS_PER_RADIAN;
+	ReferencePosition2 = ActualPosition2;
+	ActualVelocity2 = (in_motor2->act_vel)/COUNTS_PER_RADIAN/10;
+
+	// pressure sensor
+	StatA = (in_pressure->stat1);
+	ValA = (in_pressure->val1);
+	StatB = (in_pressure->stat2);
+    	ValB = (in_pressure->val2);
+    
+
+//	traj[i] = ActualPosition1;
+
+//	InputTorque = PDcontroller(ReferencePosition, ActualPosition, ActualVelocity);
+	/* For damping meassure */
+//	out_motor->tg_tau = (int16)(InputTorque * Units_per_Nm);
+        needlf = TRUE;
     }
+    /* Output torque and velocity values to a file */
+/*
+    FILE *fp = NULL;
+    char *filename = "/home/ethercat-master/time_stamp.dat";
+    remove(filename);
+    fp = fopen(filename, "w");
+    int j=0;
+    for (j=0;j<20000;j++)
+    {
+	fprintf(fp, "%d, %d, %d, %lf\n", j, time_stamp[j], cycle_stamp[j], traj[j]);
+    }
+*/  
+ 
 }
 
 
@@ -388,5 +421,4 @@ OSAL_THREAD_FUNC switch_off( void *ptr )
     /* Disable motor drive */
     WRITE_SDO(1, 0x6040, 0, BUF16, 0, "*Control word: motor1*");
     inOP = FALSE;
-    dorun = 0;
 }

@@ -51,7 +51,7 @@ int SDO_write32 (uint16 slave, uint16 index, uint8 subindex, uint32 value)
  * @param[in] slave	=  Slave number.
  * @param[out] wkc 	=  Working counter.
  * */
-int pdo_map (uint16 slave)
+int motor_pdo (uint16 slave)
 {
     int wkc = 0;
     
@@ -61,22 +61,29 @@ int pdo_map (uint16 slave)
     wkc += SDO_write8  (slave, 0x1C13, 0, 0);
 
     /* CSP Inputs */
+/*
     wkc += SDO_write8  (slave, 0x1A00, 0, 0);
     wkc += SDO_write32 (slave, 0x1A00, 1, 0x60640020); //Actual position
     wkc += SDO_write32 (slave, 0x1A00, 2, 0x606C0020); //Actual velocity
     wkc += SDO_write8  (slave, 0x1A00, 0, 2);
+*/
 
     /* CSP Outputs */
+/*
     wkc += SDO_write8  (slave, 0x1600, 0, 0);
     wkc += SDO_write32 (slave, 0x1600, 1, 0x607A0020); //Target position
     wkc += SDO_write32 (slave, 0x1600, 2, 0x60710010); //Target torque
     wkc += SDO_write8  (slave, 0x1600, 0, 2);
+*/
 
-    wkc += SDO_write16 (slave, 0x1C12, 1, 0X1600);
+    /* CSP Outputs */
+    wkc += SDO_write16 (slave, 0x1C12, 1, 0X1700);
     wkc += SDO_write8  (slave, 0x1C12, 0, 1);
 
-    wkc += SDO_write16 (slave, 0x1C13, 1, 0x1A00);
+    /* CSP Inputs */
+    wkc += SDO_write16 (slave, 0x1C13, 1, 0x1B00);
     wkc += SDO_write8  (slave, 0x1C13, 0, 1);
+
 
     /* Explicitly set flags that are (probably) invalid in EEPROM */
     ec_slave[slave].SM[2].SMflags = 0x10024l;
@@ -96,7 +103,7 @@ int pdo_map (uint16 slave)
  */
 int motor_setup(uint16 motor)
 {
-    ec_slave[motor].PO2SOconfig = pdo_map;
+    ec_slave[motor].PO2SOconfig = motor_pdo;
 }
 
 
@@ -113,7 +120,7 @@ int motor_init(uint16 motor)
     /* Switch to torque mode */
     /* OpMode: 8 => CSP mode */
     /* OpMode: 10 => Torque mode */
-    WRITE_SDO(motor, 0x6060, 0, BUF8, 10, "OpMode");
+    WRITE_SDO(motor, 0x6060, 0, BUF8, 8, "OpMode");
     READ_SDO(motor, 0x6061, 0, BUF8, "OpMode display");
     /* rated torque (0.001 Nm) */
     /* 1 Nm = 5000 units (up to 4Nm) */
