@@ -91,6 +91,7 @@ typedef struct PACKED
 PACKED_END
 
 /* Test (EL3702) */
+/*
 typedef struct PACKED
 {
     uint16 cyc1;
@@ -100,6 +101,7 @@ typedef struct PACKED
     uint32 latch;
 } in_test_s;
 PACKED_END
+*/
 /********************************************************************************************/
 
 
