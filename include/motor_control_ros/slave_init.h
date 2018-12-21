@@ -12,7 +12,6 @@
 
 int motor_setup(uint16 motor);
 int motor_init(uint16 motor);
-
-int pressure_setup(uint16 slave);
+int motor_init_preop(uint16 motor);
 
 #endif //_CONFIG_SDOPARAM_H#endif //_CONFIG_SDOPARAM_H

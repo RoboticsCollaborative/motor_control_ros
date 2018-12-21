@@ -70,7 +70,7 @@ void haptic_config(void *ifnameptr)
 		            /* CompleteAccess disabled for Bel driver */
 	    		    ec_slave[motor2].CoEdetails ^= ECT_COEDET_SDOCA;
 			    /* Set PDO mapping */
-		    	    printf("Found %s at position %d\n", ec_slave[motor1].name, motor2);
+		    	    printf("Found %s at position %d\n", ec_slave[motor2].name, motor2);
 			    motor_setup(motor2);
 			}
 		    }
@@ -100,7 +100,7 @@ void haptic_config(void *ifnameptr)
 	     */
 	    motor_init(motor1);
 	    motor_init(motor2);
-
+	    
 
 	    /* Activate motor drive */
 //	    WRITE_SDO(motor1, 0x6040, 0, BUF16, 15, "*Control word: motor1*");
@@ -127,7 +127,7 @@ void haptic_config(void *ifnameptr)
 		{
 		    while(inOP)
             	    {
-		        printf("act_pos1: %2.4lf, act_vel1: %2.4lf, act_pos2: %2.4lf, act_vel2: %2.4lf, PressureA: %+lf, PressureB: %+lf, load_pos: %lf, load_vel: %d\r", ActualPosition1, ActualVelocity1, ActualPosition2, ActualVelocity2, Pressure1, Pressure2, LoadPosition, LoadVelocity); 
+		        printf("act_pos1: %+2.4lf, act_vel1: %+2.4lf, act_pos2: %+2.4lf, act_vel2: %+2.4lf, PressureA: %+lf, PressureB: %+lf\r", ActualPosition1, ActualVelocity1, ActualPosition2, ActualVelocity2, Pressure1, Pressure2); 
 //		    osal_usleep(5000);
                     }
 		}
@@ -225,10 +225,10 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
     }
 
     /* motor1 */
-//    out_motor_p *out_motor1 = (out_motor_p *)ec_slave[motor1].outputs;
+    out_motor_p *out_motor1 = (out_motor_p *)ec_slave[motor1].outputs;
     in_motor_p *in_motor1 = (in_motor_p *)ec_slave[motor1].inputs;
     /* motor2 */
-//    out_motor_p *out_motor2 = (out_motor_p *)ec_slave[motor2].outputs;
+    out_motor_p *out_motor2 = (out_motor_p *)ec_slave[motor2].outputs;
     in_motor_p *in_motor2 = (in_motor_p *)ec_slave[motor2].inputs;
 
     /* pressure sensor */
@@ -237,19 +237,19 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
     /* Initialize origin (By SDO) */
 
     // motor1
-//    out_motor1->ctrl_wd = (uint16)0;
-//    out_motor1->tg_pos = (int32)0;
+    out_motor1->ctrl_wd = (uint16)0;
+    out_motor1->tg_pos = (int32)0;
 //    out_motor1->vel_off = (int32)0;
-//    out_motor1->tau_off = (int16)0;
+    out_motor1->tau_off = (int16)0;
     ActualPosition1 = (in_motor1->act_pos)/COUNTS_PER_RADIAN;
     ReferencePosition1 = ActualPosition1;
     ActualVelocity1 = (in_motor1->act_vel)/COUNTS_PER_RADIAN/10;
  
     // motor2
-//    out_motor2->ctrl_wd = (uint16)0;
-//    out_motor2->tg_pos = (int32)0;
+    out_motor2->ctrl_wd = (uint16)0;
+    out_motor2->tg_pos = (int32)0;
 //    out_motor2->vel_off = (int32)0;
-//    out_motor2->tau_off = (int16)0;
+    out_motor2->tau_off = (int16)0;
     ActualPosition2 = (in_motor2->act_pos)/COUNTS_PER_RADIAN;
     ReferencePosition2 = ActualPosition2;
     ActualVelocity2 = (in_motor2->act_vel)/COUNTS_PER_RADIAN/10;
@@ -282,18 +282,18 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
         wkc = ec_receive_processdata(EC_TIMEOUTRET);
 		
 	/* motor1 */			
-//	out_motor1->ctrl_wd = (uint16)0;
-//	out_motor1->tg_pos = (int32)0;
+	out_motor1->ctrl_wd = (uint16)15;
+	out_motor1->tg_pos = (int32)0;
 //	out_motor1->tg_pos = (int32)(COUNTS_PER_RADIAN*sin(3.14/2000*i)); 
 //	out_motor1->vel_off = (int32)0;
-//	out_motor1->tau_off = (int16)0;
+//	out_motor1->tau_off = (int16)0; 
 	ActualPosition1 = (in_motor1->act_pos)/COUNTS_PER_RADIAN;
 	ReferencePosition1 = ActualPosition1;
 	ActualVelocity1 = (in_motor1->act_vel)/COUNTS_PER_RADIAN/10;
  
 	/* motor2 */			
-//	out_motor2->ctrl_wd = (uint16)15;
-//	out_motor2->tg_pos = (int32)0;
+	out_motor2->ctrl_wd = (uint16)15;
+	out_motor2->tg_pos = (int32)0;
 //	out_motor2->vel_off = (int32)0;
 //	out_motor2->tau_off = (int16)0;
 	ActualPosition2 = (in_motor2->act_pos)/COUNTS_PER_RADIAN;
@@ -305,10 +305,11 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
     	Pressure2 = (double)(in_pressure->val2) * PASCAL_PER_COUNT * NM_PER_PASCAL;
 
 	/* load encoder */
+/*
 	LoadPosition = (double)(in_motor1->load_pos)/4000*2*3.14;
 	LoadVelocity = (in_motor1->load_vel);
+*/
  
-
 
 //	traj[i] = ActualPosition1;
 
