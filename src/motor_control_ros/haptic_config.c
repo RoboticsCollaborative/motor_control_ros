@@ -127,7 +127,7 @@ void haptic_config(void *ifnameptr)
 		{
 		    while(inOP)
             	    {
-		        printf("act_pos1: %lf, act_vel1: %lf, act_pos2: %lf, act_vel2: %lf, StatA: %d, ValA: %d, StatB: %d, ValB: %d\r", ActualPosition1, ActualVelocity1, ActualPosition2, ActualVelocity2, StatA, ValA, StatB, ValB); 
+		        printf("act_pos1: %2.4lf, act_vel1: %2.4lf, act_pos2: %2.4lf, act_vel2: %2.4lf, PressureA: %+lf, PressureB: %+lf, load_pos: %lf, load_vel: %d\r", ActualPosition1, ActualVelocity1, ActualPosition2, ActualVelocity2, Pressure1, Pressure2, LoadPosition, LoadVelocity); 
 //		    osal_usleep(5000);
                     }
 		}
@@ -233,7 +233,7 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
 
     /* pressure sensor */
     in_pressure_s *in_pressure = (in_pressure_s *)ec_slave[psensor].inputs;	
- 
+
     /* Initialize origin (By SDO) */
 
     // motor1
@@ -300,12 +300,15 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
 	ReferencePosition2 = ActualPosition2;
 	ActualVelocity2 = (in_motor2->act_vel)/COUNTS_PER_RADIAN/10;
 
-	// pressure sensor
-	StatA = (in_pressure->stat1);
-	ValA = (in_pressure->val1);
-	StatB = (in_pressure->stat2);
-    	ValB = (in_pressure->val2);
-    
+	/* pressure sensor */
+	Pressure1 = (double)(in_pressure->val1) * PASCAL_PER_COUNT * NM_PER_PASCAL;
+    	Pressure2 = (double)(in_pressure->val2) * PASCAL_PER_COUNT * NM_PER_PASCAL;
+
+	/* load encoder */
+	LoadPosition = (double)(in_motor1->load_pos)/4000*2*3.14;
+	LoadVelocity = (in_motor1->load_vel);
+ 
+
 
 //	traj[i] = ActualPosition1;
 

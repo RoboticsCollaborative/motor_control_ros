@@ -27,6 +27,7 @@ uint16 stat1 = 0, stat2 = 0;
 int16 val1 = 0, val2 = 0;
 
 /* Pressure sensor */
+/*
 typedef struct PACKED
 {
     uint8 stat1;
@@ -35,6 +36,7 @@ typedef struct PACKED
     int16 val2;
 } in_pressure_s;
 PACKED_END
+*/
 
 
 void simpletest(char *ifname)
@@ -96,7 +98,8 @@ void simpletest(char *ifname)
             printf("Operational state reached for all slaves.\n");
             inOP = TRUE;
 
-	    in_pressure_s *in_pressure = (in_pressure_s *)ec_slave[2].inputs;
+	    /* Slave test */
+//	    in_pressure_s *in_pressure = (in_pressure_s *)ec_slave[2].inputs;
 	    printf("Pressure sensor setup\n");
 	    
                 /* cyclic loop */
@@ -109,10 +112,12 @@ void simpletest(char *ifname)
                     {
                         printf("Processdata cycle %4d, WKC %d , O:", i, wkc);
 			
+/*
 			stat1 = in_pressure->stat1;
 			val1 = in_pressure->val1;
 			stat2 = in_pressure->stat2;
 			val2 = in_pressure->val2;
+*/
 
                         for(j = 0 ; j < oloop; j++)
                         {

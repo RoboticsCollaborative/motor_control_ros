@@ -39,8 +39,9 @@ uint8 currentgroup = 0;
 uint16 motor1 = 0, motor2 = 0, psensor = 0;
 double ActualPosition1 = 0, ActualVelocity1 = 0, InputTorque1 = 0, ReferencePosition1 = 0;
 double ActualPosition2 = 0, ActualVelocity2 = 0, InputTorque2 = 0, ReferencePosition2 = 0;
-uint8 StatA = 0, StatB = 0;
-int16 ValA = 0, ValB = 0;
+double Pressure1 = 0, Pressure2 = 0;
+double LoadPosition = 0; int32  LoadVelocity = 0;
+
 /* Tempory test */
 //int time_stamp[40000], cycle_stamp[40000];
 //double traj[40000];
@@ -69,6 +70,8 @@ typedef struct PACKED
     int32 pos_err;	// Position error (0x60F4)
     int32 act_vel;	// Actual velocity (0x606C)
     int16 act_tau;	// Torque actual value (0x6077)
+    int32 load_pos;	// Load encoder position (0x2242)
+    int32 load_vel;	// Load encoder velocity (0x2231)
 } in_motor_p;
 
 typedef struct PACKED

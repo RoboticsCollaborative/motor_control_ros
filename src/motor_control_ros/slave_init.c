@@ -60,14 +60,6 @@ int motor_pdo (uint16 slave)
     wkc += SDO_write8  (slave, 0x1C12, 0, 0);
     wkc += SDO_write8  (slave, 0x1C13, 0, 0);
 
-    /* CSP Inputs */
-/*
-    wkc += SDO_write8  (slave, 0x1A00, 0, 0);
-    wkc += SDO_write32 (slave, 0x1A00, 1, 0x60640020); //Actual position
-    wkc += SDO_write32 (slave, 0x1A00, 2, 0x606C0020); //Actual velocity
-    wkc += SDO_write8  (slave, 0x1A00, 0, 2);
-*/
-
     /* CSP Outputs */
 /*
     wkc += SDO_write8  (slave, 0x1600, 0, 0);
@@ -80,9 +72,15 @@ int motor_pdo (uint16 slave)
     wkc += SDO_write16 (slave, 0x1C12, 1, 0X1700);
     wkc += SDO_write8  (slave, 0x1C12, 0, 1);
 
-    /* CSP Inputs */
-    wkc += SDO_write16 (slave, 0x1C13, 1, 0x1B00);
-    wkc += SDO_write8  (slave, 0x1C13, 0, 1);
+    /* Load Encoder Inputs */
+    wkc += SDO_write8  (slave, 0x1A00, 0, 0);
+    wkc += SDO_write32 (slave, 0x1A00, 1, 0x22420020); //Load encoder position
+    wkc += SDO_write32 (slave, 0x1A00, 2, 0x22310020); //Load encoder velocity
+    wkc += SDO_write8  (slave, 0x1A00, 0, 2);
+
+    wkc += SDO_write16 (slave, 0x1C13, 1, 0x1B00);  //Pre-mapped inputs
+    wkc += SDO_write16 (slave, 0x1C13, 2, 0x1A00);
+    wkc += SDO_write8  (slave, 0x1C13, 0, 2);
 
 
     /* Explicitly set flags that are (probably) invalid in EEPROM */
