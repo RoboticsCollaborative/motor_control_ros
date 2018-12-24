@@ -37,10 +37,12 @@ boolean inOP = FALSE;
 uint8 currentgroup = 0;
 
 uint16 motor1 = 0, motor2 = 0, psensor = 0;
-double ActualPosition1 = 0, ActualVelocity1 = 0, InputTorque1 = 0, ReferencePosition1 = 0;
-double ActualPosition2 = 0, ActualVelocity2 = 0, InputTorque2 = 0, ReferencePosition2 = 0;
-double Pressure1 = 0, Pressure2 = 0;
+double ActualPosition1 = 0, ActualVelocity1 = 0, InputTorque1 = 0;
+int32 ReferencePosition1 = 0, ReferencePosition2 = 0;
+double ActualPosition2 = 0, ActualVelocity2 = 0, InputTorque2 = 0;
+double tau_p1 = 0, tau_p2 = 0;
 double LoadPosition = 0; int32  LoadVelocity = 0;
+static double xd = 0, xd1 = 0, xd2 = 0;
 
 /* Tempory test */
 //int time_stamp[40000], cycle_stamp[40000];
@@ -79,7 +81,7 @@ typedef struct PACKED
     uint16 ctrl_wd;	// Control word (0x6040)
     int32 tg_pos;	// Target position (0x607A)
     int32 vel_off;	// Velocity offset (velocity feedforward) (0x60B1)
-    int16 tau_off;	// Torque offset (acceleration feedforward) (0x60B2)
+    int32 tau_off;	// Torque offset (acceleration feedforward) (0x60B2)
 } out_motor_p;
 PACKED_END
 

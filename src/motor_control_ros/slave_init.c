@@ -136,9 +136,9 @@ int motor_init(uint16 motor)
 */
   
     /* Loop gains */
-    WRITE_SDO(motor, 0x2382, 1, BUF16, 2000, "Position loop gain (Pp)");
+    WRITE_SDO(motor, 0x2382, 1, BUF16, 1000, "Position loop gain (Pp)");
     osal_usleep(1000);
-    WRITE_SDO(motor, 0x2381, 1, BUF16, 200, "Velocity loop gain (Vp)");
+    WRITE_SDO(motor, 0x2381, 1, BUF16, 100, "Velocity loop gain (Vp)");
     osal_usleep(1000);
     READ_SDO(motor, 0x2382, 1, BUF16, "Velocity loop gain (Pp)");
     osal_usleep(1000);
@@ -146,8 +146,10 @@ int motor_init(uint16 motor)
     osal_usleep(1000);
 
     /* Motor limits */
+    WRITE_SDO(motor, 0x2110, 0,  IBUF16, 100, "Peak current limit");
     READ_SDO(motor, 0x2110, 0, IBUF16, "Peak current limit");
     osal_usleep(1000);
+    WRITE_SDO(motor, 0x2111, 0,  IBUF16, 100, "Continuous current limit");
     READ_SDO(motor, 0x2111, 0, IBUF16, "Continuous current limit");
     osal_usleep(1000);
     READ_SDO(motor, 0x2103, 0, IBUF32, "Velocity limit");
@@ -167,7 +169,6 @@ int motor_init(uint16 motor)
     osal_usleep(1000);
 
     return 0;
-
 }
 
 
