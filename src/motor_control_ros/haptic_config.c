@@ -132,7 +132,7 @@ void haptic_config(void *ifnameptr)
 		{
 		    while(inOP)
             	    {
-		        printf("act_pos1: %+2.4lf, act_vel1: %+2.4lf, act_pos2: %+2.4lf, act_vel2: %+2.4lf, tau_p2: %+lf, xd: %+lf\r", ActualPosition1, ActualVelocity1, ActualPosition2, ActualVelocity2, tau_p2, xd); 
+		        printf("act_pos1: %+2.4lf, act_vel1: %+2.4lf, act_pos2: %+2.4lf, act_vel2: %+2.4lf, tau_p2: %+lf\r", ActualPosition1, ActualVelocity1, ActualPosition2, ActualVelocity2, tau_p2); 
 //		    osal_usleep(5000);
                     }
 		}
@@ -207,8 +207,8 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
     int ht;
     int64 cycletime;
 
-    double Jm = 2.0e-3;
-    double dt = 0.5e-3;
+    double Jm = 0.002;
+    double dt = 0.0005;
 
     /* Time stamp */
 //    static uint32 Time0 = 0;
@@ -243,10 +243,9 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
     in_pressure_s *in_pressure = (in_pressure_s *)ec_slave[psensor].inputs;	
 
     /* Initialize origin (By SDO) */
-
-    xd = ReferencePosition2/COUNTS_PER_RADIAN;
-    xd1 = ReferencePosition2/COUNTS_PER_RADIAN;
-    xd2 = ReferencePosition2/COUNTS_PER_RADIAN;
+    //  xd = ReferencePosition2/COUNTS_PER_RADIAN;
+    //  xd1 = ReferencePosition2/COUNTS_PER_RADIAN;
+    //  xd2 = ReferencePosition2/COUNTS_PER_RADIAN;
 
     // motor1
     out_motor1->ctrl_wd = (uint16)0;
@@ -310,17 +309,17 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
 
 
 	/* admittance controller */
-	xd = (tau_p2/Jm)*dt*dt + 2*xd1 - xd2;
+//	xd =10*(tau_p2/Jm)*dt*dt + 2*xd1 - xd2;
  
 	/* motor2 */			
 	out_motor2->ctrl_wd = (uint16)15;
-	//out_motor2->tg_pos = (int32)(xd*COUNTS_PER_RADIAN);
+	//out_motor2->tg_pos = (int32)(xd*COUNTS_PER_RADIAN)+ReferencePosition2;
 	out_motor2->tg_pos = (int32)ReferencePosition2;
 //	out_motor2->vel_off = (int32)0;
 
 
 
-	out_motor2->tau_off = (int32)(tau_p2*0.0*UNITS_PER_NM);
+	out_motor2->tau_off = (int32)(tau_p2*1.5*UNITS_PER_NM);
 	ActualPosition2 = (in_motor2->act_pos)/COUNTS_PER_RADIAN;
 	ActualVelocity2 = (in_motor2->act_vel)/COUNTS_PER_RADIAN/10;
 
@@ -330,8 +329,10 @@ OSAL_THREAD_FUNC_RT ecatthread( void *ptr )
 	LoadVelocity = (in_motor1->load_vel);
 */
 	/* update desired trajectory saved states */
+/*
 	xd2 = xd1;
 	xd1 = xd;
+*/
 
 //	traj[i] = ActualPosition1;
 

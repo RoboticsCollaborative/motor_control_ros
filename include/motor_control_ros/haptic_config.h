@@ -42,7 +42,7 @@ int32 ReferencePosition1 = 0, ReferencePosition2 = 0;
 double ActualPosition2 = 0, ActualVelocity2 = 0, InputTorque2 = 0;
 double tau_p1 = 0, tau_p2 = 0;
 double LoadPosition = 0; int32  LoadVelocity = 0;
-static double xd = 0, xd1 = 0, xd2 = 0;
+//static double xd = 0, xd1 = 0, xd2 = 0;
 
 /* Tempory test */
 //int time_stamp[40000], cycle_stamp[40000];
