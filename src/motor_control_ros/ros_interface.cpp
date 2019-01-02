@@ -13,7 +13,7 @@
 #include <math.h>
 extern "C" {
 #include <soem/ethercat.h>
-#include "motor_control_ros/haptic_config.h"
+#include "motor_control_ros/rdda_test.h"
 }
 
 
@@ -26,8 +26,8 @@ extern "C" {
  */
 double getActualPosition (uint slave = 1)
 {
-    in_motor_t *in_motor = (in_motor_t *)ec_slave[slave].inputs;
-    return in_motor->ac_pos;
+    in_motor_p *in_motor = (in_motor_p *)ec_slave[slave].inputs;
+    return in_motor->act_pos;
 }
 
 
@@ -37,8 +37,8 @@ double getActualPosition (uint slave = 1)
  */
 double getActualVelocity (uint slave = 1)
 {
-    in_motor_t *in_motor = (in_motor_t *)ec_slave[slave].inputs;
-    return in_motor->ac_vel;
+    in_motor_p *in_motor = (in_motor_p *)ec_slave[slave].inputs;
+    return in_motor->act_vel;
 }
 
 
@@ -46,9 +46,11 @@ double getActualVelocity (uint slave = 1)
  * @param[in] slave	= Slave number
  * @param[in] value	= Torque value
  */
+/*
 int setTargetTorque (uint slave, int16 value)
 {
     out_motor_t *out_motor = (out_motor_t *)ec_slave[slave].outputs;
     out_motor->tg_tau = value;
     return 0;
 }
+*/

@@ -57,7 +57,7 @@ void start_driver(char* ifname)
     /* Create thread to shut off motor drive */
     osal_thread_create(&thread2, 128000, (void*) &switch_off, (void*) &ctime);
     /* Start cyclic part */
-    osal_thread_create(&thread3, 128000, (void*) &haptic_config, (void*) ifname);
+    osal_thread_create(&thread3, 128000, (void*) &rdda_ecat_config, (void*) ifname);
 
     /* Deploy iso-core to ethercat thread */
     cpu_set_t CPU3;

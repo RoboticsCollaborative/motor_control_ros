@@ -16,7 +16,7 @@
 
 extern "C" {
 #include <soem/ethercat.h>
-#include <motor_control_ros/haptic_config.h>
+#include <motor_control_ros/rdda_test.h>
 }
 
 #define EC_TIMEOUTMON 500

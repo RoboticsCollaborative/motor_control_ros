@@ -18,7 +18,7 @@
 //self
 #include "../motor_control_ros/ros_interface.h"
 extern "C" {
-#include "../motor_control_ros/haptic_config.h"
+#include "../motor_control_ros/rdda_test.h"
 };
 
 static pthread_t ros_thread;

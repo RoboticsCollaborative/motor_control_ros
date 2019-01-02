@@ -118,14 +118,12 @@ catkin_package(
 ###########
 
 add_library(${PROJECT_NAME}_src
-#        include/${PROJECT_NAME}/slave_init.h
-#        include/${PROJECT_NAME}/controller.h
-#        include/${PROJECT_NAME}/ecattype.h
+#        include/${PROJECT_NAME}/init_BEL.h
+#        include/${PROJECT_NAME}/rdda_test.h
 #        include/${PROJECT_NAME}/ethercat.h
-#        include/${PROJECT_NAME}/haptic_config.h
-        src/${PROJECT_NAME}/slave_init.c
-        src/${PROJECT_NAME}/controller.c
-        src/${PROJECT_NAME}/haptic_config.c
+#        include/${PROJECT_NAME}/soem_wrappers.h
+        src/${PROJECT_NAME}/rdda_test.c
+        src/${PROJECT_NAME}/init_BEL.c
 #        src/${PROJECT_NAME}/ros_interface.cpp
         )
 
@@ -155,7 +153,7 @@ add_library(${PROJECT_NAME}_simple_test_cpp src/motor_control_ros/simple_test.cp
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_haptic_run src/${PROJECT_NAME}/haptic_run.cpp)
+add_executable(${PROJECT_NAME}_rdda_run src/${PROJECT_NAME}/rdda_run.cpp)
 add_executable(${PROJECT_NAME}_simple_test src/motor_control_ros/simple_test.c)
 add_executable(${PROJECT_NAME}_rdd_node src/nodes/rdd_node.cpp)
 
@@ -194,7 +192,7 @@ target_link_libraries(${PROJECT_NAME}_simple_test ${catkin_LIBRARIES})
 
 #target_link_libraries(${PROJECT_NAME}_simple_test_cpp ${catkin_LIBRARIES} ${PROJECT_NAME}_rdd_node)
 
-target_link_libraries(${PROJECT_NAME}_haptic_run ${PROJECT_NAME}_src)
+target_link_libraries(${PROJECT_NAME}_rdda_run ${PROJECT_NAME}_src)
 
 target_link_libraries(${PROJECT_NAME}_ros_interface ${PROJECT_NAME}_src)
 

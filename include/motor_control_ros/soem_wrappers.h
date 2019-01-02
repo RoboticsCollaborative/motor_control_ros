@@ -1,25 +1,5 @@
-/**
- * \file
- * \All self-defined macros.
- * 
- * Edited by Zikun Yu -- yu.zik@husky.neu.edu
- *
- * Whitney Robotics Lab  10/2/2018 
- */
-
-#ifndef _ECATTYPE_H_
-#define _ECATTYPE_H_
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <inttypes.h>
-#include <soem/ethercat.h>
-//#include "motor_control_ros/ethercat.h"
-
-#define COUNTS_PER_RADIAN	52151.8917
-#define UNITS_PER_NM		5000
-#define PASCAL_PER_COUNT	21.04178
-#define NM_PER_PASCAL		2.822e-6
+#ifndef SOEM_WRAPPERS_H
+#define SOEM_WRAPPERS_H
 
 /* Buffers for SDO transfer */
 #define READ_SDO(slave, idx, sub, buf, comment) \
@@ -44,5 +24,4 @@
     printf("EC> \"%s\" %x - %x [%s] \n", (char*)ec_elist2string(), ec_slave[slave].state, ec_slave[slave].ALstatuscode, (char*)ec_ALstatuscode2string(ec_slave[slave].ALstatuscode)); \
 }
 
-
-#endif //_ECATTYPE_H_
+#endif /* SOEM_WRAPPERS_H */
