@@ -30,6 +30,9 @@
 #define OMEGA_Z             4
 #define N_SCALE_GAIN        .16
 
+#define INERTIAL	.578e-3
+#define DAMPING 	0.3e-3
+#define LAMBDA	 	62.8
 
 char IOmap[4096];
 int expectedWKC;
@@ -70,7 +73,11 @@ double b1 = 0.0;
 /* filter states */
 double xx1 = 0.0;
 double yy1 = 0.0;
-
+/* DOB parameters */
+double tau_back = 0.0;
+double pressure_back = 0.0;
+double vel_back = 0.0;
+double pos_back = 0.0;
 
 void rdda_ecat_config(void *ifnameptr)
 {
@@ -177,8 +184,7 @@ void rdda_ecat_config(void *ifnameptr)
         /* Activate motor drive */
 //      WRITE_SDO(motor1, 0x6040, 0, BUF16, 15, "*Control word: motor1*");
 
-
-    /* Going operational */
+   /* Going operational */
     ec_slave[0].state = EC_STATE_OPERATIONAL;
     /* send one valid process data to make outputs in slaves happy*/
     ec_send_processdata();
@@ -193,7 +199,8 @@ void rdda_ecat_config(void *ifnameptr)
         printf("Operational state reached for all slaves.\n");
         inOP = TRUE;
     }
-    
+
+
     /* cyclic loop */
     /* Note that we are not in the real-time thread, but the "config"/"monitor" thread
      * so we set the inOP flag, and then loop at a slower rate and log some data to
@@ -202,12 +209,16 @@ void rdda_ecat_config(void *ifnameptr)
      * hit "q" to quit --- in both cases we want to go back to INIT and shut down.
      */ 
     if(wkc >= expectedWKC){
-        while(inOP) {
-            printf("th1: %+2.4lf, th2: %+2.4lf, p1: %+2.4lf, p2: %+2.4lf, n: %d, tau: %+2.4lf\r\n", theta1_rad, theta2_rad, tau_p1_Nm, tau_p2_Nm, time_usec, (double)(tau_sat_units)/UNITS_PER_NM); 
-            /* calculate next cycle start */
-            add_timespec(&ts, 2000000);
-            /* wait to cycle start */
-            clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, &tleft);
+ 
+    while(inOP && (loop_num <= 20000)) {
+        printf("enc1_pos: %+2.4lf, enc1_vel: %+2.4lf, th1: %+2.4lf, th2: %+2.4lf, p1: %+2.4lf, p2: %+2.4lf, n: %ld, tau: %+2.4lf\r", theta1_load_rad, theta1_dot_load_radHz, theta1_rad, theta2_rad, tau_p1_Nm, tau_p2_Nm, time_usec, (double)(tau_sat_units)/UNITS_PER_NM);
+
+        /* calculate next cycle start */
+//        add_timespec(&ts, 2000000);
+        /* wait to cycle start */
+//        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, &tleft);
+	
+	fflush(stdout);	
         }
     } else {
         printf("Not all slaves reached operational state.\n");
@@ -220,7 +231,7 @@ void rdda_ecat_config(void *ifnameptr)
             }
         }
     }
-    
+	
     printf("\nRequest init state for all slaves\n");
     ec_slave[0].state = EC_STATE_INIT;
     /* request INIT state for all slaves */
@@ -265,16 +276,26 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
     struct timespec ts, tleft;
     int ht;
     int64 cycletime;
-    double tau;
-    
+    double tau, chirp;
+
+
+    /* create a data file */
+    FILE *fptr;
+    char filename[] = "/home/ethercat-master/rdda.dat";
+    remove(filename);
+    fptr = fopen(filename, "w");
+
 
     /* Time stamp */
+/*
 //    static uint32 Time0 = 0;
 //    static uint32 Time1 = 0;
 //    static uint32 Time_cycle = 0;
 
 //    pthread_mutex_lock(&mutex);
 //    gettimeofday(&ts, NULL);
+*/
+
     clock_gettime(CLOCK_MONOTONIC, &ts);  
   
     /* Conver from timeval to timespec */
@@ -293,7 +314,13 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
     b0 = K*(b*Ts+2.0)/(a*Ts+2.0);
     b1 = K*(b*Ts-2.0)/(a*Ts+2.0);
 
-
+    /* chirp params */
+    double f1 = 0.1; /* initial frequency 0.1Hz */
+    double f2 = 200; /* final frequency 200Hz */
+    double T = 10; /* period 10s */
+    double t = 0.0; /* time for chirp wave */
+    double dt = 0.5e-3; /* sample time 500us */
+ 
     /* Busy waiting for OP mode */
     while(!inOP){}
 
@@ -315,7 +342,7 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
     out_motor1->vel_off = (int32)0;
     out_motor1->tau_off = (int16)0;
     
-    theta1_rad = (double)(in_motor1->act_pos)/COUNTS_PER_RADIAN;
+    theta1_rad = (double)(in_motor1->act_pos)/COUNTS_PER_RADIAN; pos_back = theta1_rad;
     theta1_dot_radHz = (double)(in_motor1->act_vel)/COUNTS_PER_RADIAN/10.0;
  
     // motor2
@@ -348,43 +375,58 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
         /* wait to cycle start */
         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, &tleft);
     
-        /* Time stamp */
-        
-        
+        /* Time stamp */               
         time_usec = osal_current_time().sec*1000000 + osal_current_time().usec;
+
+/*
         //Time_cycle = Time0 - Time1;
         //Time1 = Time0;
         //time_stamp[i] = Time0;
         //cycle_stamp[i] = Time_cycle;
+*/
     
-    
-        /* Cyclic data */
-        ec_send_processdata();
-        wkc = ec_receive_processdata(EC_TIMEOUTRET);
-            
-        /* pressure sensor */
-        tau_p1_Nm = (double)(in_pressure->val1) * PASCAL_PER_COUNT * NM_PER_PASCAL;
-        tau_p2_Nm = (double)(in_pressure->val2) * PASCAL_PER_COUNT * NM_PER_PASCAL - .03;
-    
-        // motor1
-        out_motor1->ctrl_wd = (uint16)15;
-        out_motor1->tg_pos = initial_theta1_cnts;
-        out_motor1->vel_off = (int32)0;
-        out_motor1->tau_off = (int16)0;
-        
-        theta1_rad = (double)(in_motor1->act_pos)/COUNTS_PER_RADIAN;
-        theta1_dot_radHz = (double)(in_motor1->act_vel)/COUNTS_PER_RADIAN/10.0;
-     
+ /*========================================================================================================*/     
         /* calculate force feedback */
-        
-        //tau = tau_p2_Nm * 1.5;
+ 
+	/* For tests */ 
+	/* Note that we generate a chirp sine wave on torque offset on one finger with frequency
+	   range from 0.1Hz to 200Hz, the output data plot in matlab shows the response for a 
+	   passive system. 
+	   There're 4 cases covered here:
+	   a. Force feedforward (passive);
+	   b. Phase lead;
+	   c. Disturbance observer;
+	   d. Natural admittance compensation.
+	*/
+
+	/* chirp wave */
+	t = (double)loop_num*dt;
+	chirp = 0.1 * sin( 2*M_PI*f1*T/log(f2/f1) * (exp(t/T*log(f2/f1))-1) );
+      
+	/* force feedforward */
+//        tau = tau_p1_Nm * 1.5;
+/*
+	tau = chirp;
+*/
         
         /* phase lag/lead force feedback */
+/*
         tau = a1*yy1 + b0*tau_p2_Nm + b1*xx1;
         
         xx1 = tau_p2_Nm;
         yy1 = tau;
-        
+*/
+
+	/* Disturbance observer */
+
+tau = tau_back + LAMBDA * dt / 2 * (tau_p1_Nm + pressure_back) - LAMBDA * INERTIAL * (theta1_dot_radHz - vel_back) - LAMBDA * DAMPING * (theta1_rad - pos_back);
+tau_back = tau;
+pressure_back = tau_p1_Nm;
+vel_back = theta1_dot_radHz;
+pos_back = theta1_rad;
+	
+/*========================================================================================================*/     
+
         if (tau > MAX_NM ){
             tau_sat_units = (int16)(MAX_NM * (double)UNITS_PER_NM);
         }
@@ -395,12 +437,31 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
             tau_sat_units = (int16)(tau * (double)UNITS_PER_NM);
         }
         
+   
+        /* Cyclic data */
+        ec_send_processdata();
+        wkc = ec_receive_processdata(EC_TIMEOUTRET);
+            
+        /* pressure sensor */
+        tau_p1_Nm = (double)(in_pressure->val1) * PASCAL_PER_COUNT * NM_PER_PASCAL - .03;
+        tau_p2_Nm = (double)(in_pressure->val2) * PASCAL_PER_COUNT * NM_PER_PASCAL - .03;
+    
+
+        // motor1
+        out_motor1->ctrl_wd = (uint16)15;
+        out_motor1->tg_pos = initial_theta1_cnts;
+        out_motor1->vel_off = (int32)0;
+        out_motor1->tau_off = tau_sat_units;
         
+        theta1_rad = (double)(in_motor1->act_pos)/COUNTS_PER_RADIAN;
+        theta1_dot_radHz = (double)(in_motor1->act_vel)/COUNTS_PER_RADIAN/10.0;
+
+       
         // motor2
         out_motor2->ctrl_wd = (uint16)15;
         out_motor2->tg_pos = initial_theta2_cnts;
         out_motor2->vel_off = (int32)0;
-        out_motor2->tau_off = tau_sat_units;
+        out_motor2->tau_off = (int16)0;
     
         theta2_rad = (double)(in_motor2->act_pos)/COUNTS_PER_RADIAN;
         theta2_dot_radHz = (double)(in_motor2->act_vel)/COUNTS_PER_RADIAN/10.0;
@@ -408,9 +469,16 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
         /* load encoder */
         theta1_load_rad = (double)(in_motor1->load_pos)*COUNTS_PER_REV/LOAD_COUNTS_PER_REV/COUNTS_PER_RADIAN;
         theta1_dot_load_radHz = (double)(in_motor1->load_vel)*COUNTS_PER_REV/LOAD_COUNTS_PER_REV/COUNTS_PER_RADIAN/10.0;
-    
+
+  	/* save data to file */
+	fprintf(fptr, "%+2.4lf, %+2.4lf, %+2.4lf\n", theta1_rad, tau_p1_Nm, (double)(tau_sat_units)/UNITS_PER_NM);
+  
         needlf = TRUE;
     }
+
+
+    /* close file */
+    fclose(fptr);
  
 }
 
@@ -505,6 +573,5 @@ OSAL_THREAD_FUNC switch_off( void *ptr )
     /* Disable motor drive */
     WRITE_SDO(1, 0x6040, 0, BUF16, 0, "*Control word: motor1*");
     inOP = FALSE;
-    
     
 }
