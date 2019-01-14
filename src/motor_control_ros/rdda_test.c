@@ -30,9 +30,11 @@
 #define OMEGA_Z             4
 #define N_SCALE_GAIN        .16
 
-#define INERTIAL	.578e-3
-#define DAMPING 	0.3e-3
-#define LAMBDA	 	62.8
+#define INERTIAL_1	1.078e-3
+#define INERTIAL_2  (INERTIAL_1 / 1.0)
+#define DAMPING 	0.3e-7
+#define CUTOFFFREQ 20
+#define ALPHA 0.08
 
 char IOmap[4096];
 int expectedWKC;
@@ -62,7 +64,8 @@ double tau_p2_Nm = 0;
 double theta1_load_rad = 0.0; 
 double theta1_dot_load_radHz = 0.0;
 
-int16 tau_sat_units = 0;
+int16 tau_sat_units_1 = 0;
+int16 tau_sat_units_2 = 0;
 
 int64 time_usec = 0;
 
@@ -74,10 +77,15 @@ double b1 = 0.0;
 double xx1 = 0.0;
 double yy1 = 0.0;
 /* DOB parameters */
-double tau_back = 0.0;
-double pressure_back = 0.0;
-double vel_back = 0.0;
-double pos_back = 0.0;
+double comp_p1_Nm = 0.0, comp_p2_Nm = 0.0;
+double vel_back_1 = 0.0, vel_back_2 = 0.0;
+double lambda = 2 * M_PI * CUTOFFFREQ;
+double acc_1 = 0.0, acc_2 = 0.0;
+double force_unfiltered_1 = 0.0, force_unfiltered_2 = 0.0;
+//double f_n = 0.0;
+//double f_fb = 0.0;
+//double f_fb_back = 0.0;
+//double f_a =0.0;
 
 void rdda_ecat_config(void *ifnameptr)
 {
@@ -210,8 +218,8 @@ void rdda_ecat_config(void *ifnameptr)
      */ 
     if(wkc >= expectedWKC){
  
-    while(inOP && (loop_num <= 20000)) {
-        printf("enc1_pos: %+2.4lf, enc1_vel: %+2.4lf, th1: %+2.4lf, th2: %+2.4lf, p1: %+2.4lf, p2: %+2.4lf, n: %ld, tau: %+2.4lf\r", theta1_load_rad, theta1_dot_load_radHz, theta1_rad, theta2_rad, tau_p1_Nm, tau_p2_Nm, time_usec, (double)(tau_sat_units)/UNITS_PER_NM);
+    while(inOP && (loop_num <= 120000)) {
+        printf("enc1_pos: %+2.4lf, enc1_vel: %+2.4lf, th1: %+2.4lf, th2: %+2.4lf, p1: %+2.4lf, p2: %+2.4lf, n: %ld, tau: %+2.4lf\r", theta1_load_rad, theta1_dot_load_radHz, theta1_rad, theta2_rad, tau_p1_Nm, tau_p2_Nm, time_usec, (double)(tau_sat_units_1)/UNITS_PER_NM);
 
         /* calculate next cycle start */
 //        add_timespec(&ts, 2000000);
@@ -276,7 +284,7 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
     struct timespec ts, tleft;
     int ht;
     int64 cycletime;
-    double tau, chirp;
+    double tau_1, tau_2, chirp;
 
 
     /* create a data file */
@@ -335,6 +343,10 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
     /* pressure sensor */
     in_pressure_s *in_pressure = (in_pressure_s *)ec_slave[psensor].inputs; 
 
+    /* pressure sensor */
+    comp_p1_Nm = (double)(in_pressure->val1) * PASCAL_PER_COUNT * NM_PER_PASCAL;
+    comp_p2_Nm = (double)(in_pressure->val2) * PASCAL_PER_COUNT * NM_PER_PASCAL;
+
 
     // motor1
     out_motor1->ctrl_wd = (uint16)0;
@@ -342,7 +354,7 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
     out_motor1->vel_off = (int32)0;
     out_motor1->tau_off = (int16)0;
     
-    theta1_rad = (double)(in_motor1->act_pos)/COUNTS_PER_RADIAN; pos_back = theta1_rad;
+    theta1_rad = (double)(in_motor1->act_pos)/COUNTS_PER_RADIAN;
     theta1_dot_radHz = (double)(in_motor1->act_vel)/COUNTS_PER_RADIAN/10.0;
  
     // motor2
@@ -357,14 +369,18 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
     /* assume that initial force is zero. */
     xx1 = 0.0;
     yy1 = 0.0;
-    tau = 0.0;
-    
+    tau_1 = 0.0;
+    tau_2 = 0.0;
     
     /* fire the PDOs! */
     ec_send_processdata();
     wkc = ec_receive_processdata(EC_TIMEOUTRET);
 
     time_usec = 0;
+    
+    /* initialization for DOB */
+    //vel_back = theta1_dot_radHz;
+    //f_a = (double)(in_pressure->val1) * PASCAL_PER_COUNT * NM_PER_PASCAL - comp_p1_Nm;
     
     while(inOP) {
         
@@ -385,6 +401,15 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
         //cycle_stamp[i] = Time_cycle;
 */
     
+        /* Cyclic data */
+        ec_send_processdata();
+        wkc = ec_receive_processdata(EC_TIMEOUTRET);
+            
+        /* pressure sensor */
+        tau_p1_Nm = (double)(in_pressure->val1) * PASCAL_PER_COUNT * NM_PER_PASCAL - comp_p1_Nm;
+        tau_p2_Nm = (double)(in_pressure->val2) * PASCAL_PER_COUNT * NM_PER_PASCAL - comp_p2_Nm;
+    
+   
  /*========================================================================================================*/     
         /* calculate force feedback */
  
@@ -418,40 +443,56 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
 */
 
 	/* Disturbance observer */
-
-tau = tau_back + LAMBDA * dt / 2 * (tau_p1_Nm + pressure_back) - LAMBDA * INERTIAL * (theta1_dot_radHz - vel_back) - LAMBDA * DAMPING * (theta1_rad - pos_back);
-tau_back = tau;
-pressure_back = tau_p1_Nm;
-vel_back = theta1_dot_radHz;
-pos_back = theta1_rad;
-	
+	acc_1 = (theta1_dot_radHz - vel_back_1) / dt;
+	vel_back_1 = theta1_dot_radHz;
+	force_unfiltered_1 = tau_p1_Nm - INERTIAL_1 * acc_1 - DAMPING * theta1_dot_radHz;
+	tau_1 = tau_1 + lambda * dt * force_unfiltered_1;
+    acc_2 = (theta2_dot_radHz - vel_back_2) / dt;
+	vel_back_2 = theta2_dot_radHz;
+	force_unfiltered_2 = tau_p2_Nm - INERTIAL_2 * acc_2 - DAMPING * theta2_dot_radHz;
+	tau_2 = tau_2 + lambda * dt * force_unfiltered_2;
+	/*acc = (theta1_dot_radHz - vel_back) / dt;
+    f_n = INERTIAL * acc + DAMPING * theta1_dot_radHz;
+    f_fb = ALPHA * (f_n - f_a) + (1.0 - ALPHA) * f_fb_back;
+    f_a = tau_p1_Nm - f_fb;
+    tau = - f_fb;*/
+    //vel_back = theta1_dot_radHz; /* buffer current velocity */
+    //f_fb_back = f_fb; /* buffer current f_fb */
+    
 /*========================================================================================================*/     
 
-        if (tau > MAX_NM ){
-            tau_sat_units = (int16)(MAX_NM * (double)UNITS_PER_NM);
+        if (tau_1 > MAX_NM ){
+            tau_sat_units_1 = (int16)(MAX_NM * (double)UNITS_PER_NM);
         }
-        else if (tau < (-1.0*MAX_NM) ){
-            tau_sat_units = (int16)(-1.0 * MAX_NM * (double)UNITS_PER_NM);
+        else if (tau_1 < (-1.0*MAX_NM) ){
+            tau_sat_units_1 = (int16)(-1.0 * MAX_NM * (double)UNITS_PER_NM);
         }
         else {
-            tau_sat_units = (int16)(tau * (double)UNITS_PER_NM);
+            tau_sat_units_1 = (int16)(tau_1 * (double)UNITS_PER_NM);
         }
         
-   
-        /* Cyclic data */
-        ec_send_processdata();
-        wkc = ec_receive_processdata(EC_TIMEOUTRET);
-            
-        /* pressure sensor */
-        tau_p1_Nm = (double)(in_pressure->val1) * PASCAL_PER_COUNT * NM_PER_PASCAL - .03;
-        tau_p2_Nm = (double)(in_pressure->val2) * PASCAL_PER_COUNT * NM_PER_PASCAL - .03;
-    
+        if (tau_2 > MAX_NM ){
+            tau_sat_units_2 = (int16)(MAX_NM * (double)UNITS_PER_NM);
+        }
+        else if (tau_2 < (-1.0*MAX_NM) ){
+            tau_sat_units_2 = (int16)(-1.0 * MAX_NM * (double)UNITS_PER_NM);
+        }
+        else {
+            tau_sat_units_2 = (int16)(tau_2 * (double)UNITS_PER_NM);
+        }
+/*
+	if (loop_num > 20) {
+            out_motor1->ctrl_wd = (uint16)15;
+            out_motor2->ctrl_wd = (uint16)15;
+	}
+*/
+
 
         // motor1
         out_motor1->ctrl_wd = (uint16)15;
         out_motor1->tg_pos = initial_theta1_cnts;
         out_motor1->vel_off = (int32)0;
-        out_motor1->tau_off = tau_sat_units;
+        out_motor1->tau_off = tau_sat_units_1;
         
         theta1_rad = (double)(in_motor1->act_pos)/COUNTS_PER_RADIAN;
         theta1_dot_radHz = (double)(in_motor1->act_vel)/COUNTS_PER_RADIAN/10.0;
@@ -461,7 +502,7 @@ pos_back = theta1_rad;
         out_motor2->ctrl_wd = (uint16)15;
         out_motor2->tg_pos = initial_theta2_cnts;
         out_motor2->vel_off = (int32)0;
-        out_motor2->tau_off = (int16)0;
+        out_motor2->tau_off = tau_sat_units_2;
     
         theta2_rad = (double)(in_motor2->act_pos)/COUNTS_PER_RADIAN;
         theta2_dot_radHz = (double)(in_motor2->act_vel)/COUNTS_PER_RADIAN/10.0;
@@ -471,7 +512,7 @@ pos_back = theta1_rad;
         theta1_dot_load_radHz = (double)(in_motor1->load_vel)*COUNTS_PER_REV/LOAD_COUNTS_PER_REV/COUNTS_PER_RADIAN/10.0;
 
   	/* save data to file */
-	fprintf(fptr, "%+2.4lf, %+2.4lf, %+2.4lf\n", theta1_rad, tau_p1_Nm, (double)(tau_sat_units)/UNITS_PER_NM);
+	fprintf(fptr, "%+2.4lf, %+2.4lf, %+2.4lf\n", theta1_rad, tau_p1_Nm, (double)(tau_sat_units_1)/UNITS_PER_NM);
   
         needlf = TRUE;
     }
