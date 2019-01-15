@@ -20,7 +20,7 @@
 
 #define COUNTS_PER_RADIAN   52151.8917
 #define COUNTS_PER_REV      327680
-#define LOAD_COUNTS_PER_REV 4000
+#define LOAD_COUNTS_PER_REV 40000
 #define UNITS_PER_NM        5000
 #define MAX_NM              5.0
 #define PASCAL_PER_COUNT    21.04178
@@ -30,7 +30,7 @@
 #define OMEGA_Z             4
 #define N_SCALE_GAIN        .16
 
-#define INERTIAL_1	1.078e-3
+#define INERTIAL_1	(1.078e-3 / 2.0)
 #define INERTIAL_2  (INERTIAL_1 / 1.0)
 #define DAMPING 	0.3e-7
 #define CUTOFFFREQ 20
@@ -63,6 +63,9 @@ double tau_p1_Nm = 0;
 double tau_p2_Nm = 0;
 double theta1_load_rad = 0.0; 
 double theta1_dot_load_radHz = 0.0;
+double theta2_load_rad = 0.0; 
+double theta2_dot_load_radHz = 0.0;
+
 
 int16 tau_sat_units_1 = 0;
 int16 tau_sat_units_2 = 0;
@@ -219,7 +222,7 @@ void rdda_ecat_config(void *ifnameptr)
     if(wkc >= expectedWKC){
  
     while(inOP && (loop_num <= 120000)) {
-        printf("enc1_pos: %+2.4lf, enc1_vel: %+2.4lf, th1: %+2.4lf, th2: %+2.4lf, p1: %+2.4lf, p2: %+2.4lf, n: %ld, tau: %+2.4lf\r", theta1_load_rad, theta1_dot_load_radHz, theta1_rad, theta2_rad, tau_p1_Nm, tau_p2_Nm, time_usec, (double)(tau_sat_units_1)/UNITS_PER_NM);
+        printf("enc2_pos: %+2.4lf, enc2_vel: %+2.4lf, th1: %+2.4lf, th2: %+2.4lf, p1: %+2.4lf, p2: %+2.4lf, n: %ld, tau: %+2.4lf\r", theta2_load_rad, theta2_dot_load_radHz, theta1_rad, theta2_rad, tau_p1_Nm, tau_p2_Nm, time_usec, (double)(tau_sat_units_1)/UNITS_PER_NM);
 
         /* calculate next cycle start */
 //        add_timespec(&ts, 2000000);
@@ -508,8 +511,8 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
         theta2_dot_radHz = (double)(in_motor2->act_vel)/COUNTS_PER_RADIAN/10.0;
     
         /* load encoder */
-        theta1_load_rad = (double)(in_motor1->load_pos)*COUNTS_PER_REV/LOAD_COUNTS_PER_REV/COUNTS_PER_RADIAN;
-        theta1_dot_load_radHz = (double)(in_motor1->load_vel)*COUNTS_PER_REV/LOAD_COUNTS_PER_REV/COUNTS_PER_RADIAN/10.0;
+        theta2_load_rad = (double)(in_motor2->load_pos)*COUNTS_PER_REV/LOAD_COUNTS_PER_REV/COUNTS_PER_RADIAN;
+        theta2_dot_load_radHz = (double)(in_motor2->load_vel)*COUNTS_PER_REV/LOAD_COUNTS_PER_REV/COUNTS_PER_RADIAN/10.0;
 
   	/* save data to file */
 	fprintf(fptr, "%+2.4lf, %+2.4lf, %+2.4lf\n", theta1_rad, tau_p1_Nm, (double)(tau_sat_units_1)/UNITS_PER_NM);
