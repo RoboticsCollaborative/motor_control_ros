@@ -124,7 +124,7 @@ add_library(${PROJECT_NAME}_src
 #        include/${PROJECT_NAME}/soem_wrappers.h
         src/${PROJECT_NAME}/rdda_test.c
         src/${PROJECT_NAME}/init_BEL.c
-#        src/${PROJECT_NAME}/ros_interface.cpp
+        src/${PROJECT_NAME}/rdda_funcs.c
         )
 
 ## Specify additional locations of header files

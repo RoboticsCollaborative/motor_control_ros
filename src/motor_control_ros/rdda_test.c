@@ -9,86 +9,47 @@
 
 #include <stdio.h>
 #include <string.h>
-//#include <inttypes.h>
 #include <math.h>
 #include <soem/ethercat.h>
 
 #include "motor_control_ros/init_BEL.h"
 #include "motor_control_ros/rdda_test.h"
+#include "motor_control_ros/rdda_type.h"
+#include "motor_control_ros/rdda_funcs.h"
 #include "motor_control_ros/soem_wrappers.h"
 
 
-#define COUNTS_PER_RADIAN   52151.8917
-#define COUNTS_PER_REV      327680
-#define LOAD_COUNTS_PER_REV 40000
-#define UNITS_PER_NM        5000
+/* phase lead */
 #define MAX_NM              5.0
-#define PASCAL_PER_COUNT    21.04178
-#define NM_PER_PASCAL       2.822e-6
-
 #define KF_GAIN             12
 #define OMEGA_Z             4
 #define N_SCALE_GAIN        .16
 
+/* DOB */
 #define INERTIAL_1	(1.078e-3 / 2.0)
 #define INERTIAL_2  (INERTIAL_1 / 1.0)
 #define DAMPING 	0.3e-7
 #define CUTOFFFREQ 20
 #define ALPHA 0.08
 
+
 char IOmap[4096];
 int expectedWKC;
-int loop_num=0;
-int64 toff;
+int loop_num=0; //cancelled
 boolean needlf;
 volatile int wkc;
 
 //* Lock for ros interface *//
-boolean inOP = FALSE;
+boolean inOP = FALSE; 	// should have a mutex for multi-threads
 
-uint8 currentgroup = 0;
+/* Specific use GLOBAL */
+/* For ecat_check */
+uint8 currentgroup = 0; 
+/* For slave identification */
 uint16 motor1 = 0;
 uint16 motor2 = 0;
 uint16 psensor = 0;
 
-double theta1_rad = 0.0;
-double theta1_dot_radHz = 0.0;
-int32 initial_theta1_cnts = 0; 
-
-double theta2_rad = 0.0;
-double theta2_dot_radHz = 0.0;
-int32 initial_theta2_cnts = 0; 
-
-double tau_p1_Nm = 0;
-double tau_p2_Nm = 0;
-double theta1_load_rad = 0.0; 
-double theta1_dot_load_radHz = 0.0;
-double theta2_load_rad = 0.0; 
-double theta2_dot_load_radHz = 0.0;
-
-
-int16 tau_sat_units_1 = 0;
-int16 tau_sat_units_2 = 0;
-
-int64 time_usec = 0;
-
-/* filter coefficients */
-double a1 = 0.0;
-double b0 = 0.0;
-double b1 = 0.0;
-/* filter states */
-double xx1 = 0.0;
-double yy1 = 0.0;
-/* DOB parameters */
-double comp_p1_Nm = 0.0, comp_p2_Nm = 0.0;
-double vel_back_1 = 0.0, vel_back_2 = 0.0;
-double lambda = 2 * M_PI * CUTOFFFREQ;
-double acc_1 = 0.0, acc_2 = 0.0;
-double force_unfiltered_1 = 0.0, force_unfiltered_2 = 0.0;
-//double f_n = 0.0;
-//double f_fb = 0.0;
-//double f_fb_back = 0.0;
-//double f_a =0.0;
 
 void rdda_ecat_config(void *ifnameptr)
 {
@@ -187,9 +148,11 @@ void rdda_ecat_config(void *ifnameptr)
     init_BEL_CSP(motor2);
 
     /* Initialize reference position */
+/*
     READ_SDO(motor1, 0x6064, 0, initial_theta1_cnts, "Initial angle, motor 1");      
     READ_SDO(motor2, 0x6064, 0, initial_theta2_cnts, "Initial angle, motor 2");      
     printf("ref_pos1: %lf, ref_pos2: %lf\n", (double)initial_theta1_cnts/COUNTS_PER_RADIAN, (double)initial_theta2_cnts/COUNTS_PER_RADIAN);
+*/
 
 
         /* Activate motor drive */
@@ -222,7 +185,7 @@ void rdda_ecat_config(void *ifnameptr)
     if(wkc >= expectedWKC){
  
     while(inOP && (loop_num <= 120000)) {
-        printf("enc2_pos: %+2.4lf, enc2_vel: %+2.4lf, th1: %+2.4lf, th2: %+2.4lf, p1: %+2.4lf, p2: %+2.4lf, n: %ld, tau: %+2.4lf\r", theta2_load_rad, theta2_dot_load_radHz, theta1_rad, theta2_rad, tau_p1_Nm, tau_p2_Nm, time_usec, (double)(tau_sat_units_1)/UNITS_PER_NM);
+//        printf("enc2_pos: %+2.4lf, enc2_vel: %+2.4lf, th1: %+2.4lf, th2: %+2.4lf, p1: %+2.4lf, p2: %+2.4lf, n: %ld, tau: %+2.4lf\r", theta2_load_rad, theta2_dot_load_radHz, theta1_rad, theta2_rad, tau_p1_Nm, tau_p2_Nm, time_usec, (double)(tau_sat_units_1)/UNITS_PER_NM);
 
         /* calculate next cycle start */
 //        add_timespec(&ts, 2000000);
@@ -286,16 +249,8 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
 {
     struct timespec ts, tleft;
     int ht;
-    int64 cycletime;
-    double tau_1, tau_2, chirp;
-
-
-    /* create a data file */
-    FILE *fptr;
-    char filename[] = "/home/ethercat-master/rdda.dat";
-    remove(filename);
-    fptr = fopen(filename, "w");
-
+    int64 cycletime, toff;
+    int64 time_usec = 0;
 
     /* Time stamp */
 /*
@@ -315,22 +270,70 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
     cycletime = *(int*)ptr * 1000; /* cycletime in ns */
     toff = 0;
 
-    float Ts = *(int*)ptr*1e6; /* convert cycle interval to units of seconds */
+    /* create a data file */
+    FILE *fptr;
+    char filename[] = "/home/ethercat-master/rdda.dat";
+    remove(filename);
+    fptr = fopen(filename, "w");
+
+
+    /*===================== Variables for rt control ======================*/
+
+    /* motor encoders */	
+    double theta1_rad = 0.0;
+    double theta1_dot_radHz = 0.0;
+    double theta2_rad = 0.0;
+    double theta2_dot_radHz = 0.0;
+
+    /* pressure sensors */
+    double tau_p1_Nm = 0;
+    double tau_p2_Nm = 0;
+
+    /* load encoders */
+    double theta2_load_rad = 0.0; 
+    double theta2_dot_load_radHz = 0.0;
+
+    /* generated torque output */
+    double tau_1, tau_2, chirp;
+
+    /* saturated torques output */
+    int16 tau_sat_units_1 = 0;
+    int16 tau_sat_units_2 = 0;
+
+    /* filter coefficients */
+    double a1 = 0.0;
+    double b0 = 0.0;
+    double b1 = 0.0;
+
     float a = OMEGA_Z/N_SCALE_GAIN;
     float b = OMEGA_Z;
     float K = KF_GAIN;
-    
-    /* calculate phase-lag filter coefficients before spawning real time thread */
+ 
+    /* filter states */
+    double xx1 = 0.0;
+    double yy1 = 0.0;
+
+    /* calculate phase-lead filter coefficients before spawning real time thread */
     a1 = -1.0*(a*Ts-2.0)/(a*Ts+2.0);
     b0 = K*(b*Ts+2.0)/(a*Ts+2.0);
     b1 = K*(b*Ts-2.0)/(a*Ts+2.0);
 
+    /* DOB parameters */
+    double comp_p1_Nm = 0.0, comp_p2_Nm = 0.0;
+    double vel_back_1 = 0.0, vel_back_2 = 0.0;
+    double lambda = 2 * M_PI * CUTOFFFREQ;
+    double acc_1 = 0.0, acc_2 = 0.0;
+    double force_unfiltered_1 = 0.0, force_unfiltered_2 = 0.0;
+   
     /* chirp params */
     double f1 = 0.1; /* initial frequency 0.1Hz */
     double f2 = 200; /* final frequency 200Hz */
     double T = 10; /* period 10s */
     double t = 0.0; /* time for chirp wave */
-    double dt = 0.5e-3; /* sample time 500us */
+    double Ts = 0.5e-3; /* sample time 500us */
+
+
+    /*========================================================================*/
  
     /* Busy waiting for OP mode */
     while(!inOP){}
@@ -350,6 +353,10 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
     comp_p1_Nm = (double)(in_pressure->val1) * PASCAL_PER_COUNT * NM_PER_PASCAL;
     comp_p2_Nm = (double)(in_pressure->val2) * PASCAL_PER_COUNT * NM_PER_PASCAL;
 
+
+    /* Initialize reference position */
+    int32 initial_theta1_cnts = in_motor1->act_pos;
+    int32 initial_theta2_cnts = in_motor2->act_pos;
 
     // motor1
     out_motor1->ctrl_wd = (uint16)0;
@@ -428,7 +435,7 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
 	*/
 
 	/* chirp wave */
-	t = (double)loop_num*dt;
+	t = (double)loop_num*Ts;
 	chirp = 0.1 * sin( 2*M_PI*f1*T/log(f2/f1) * (exp(t/T*log(f2/f1))-1) );
       
 	/* force feedforward */
@@ -446,15 +453,15 @@ OSAL_THREAD_FUNC_RT rdda_cyclic( void *ptr )
 */
 
 	/* Disturbance observer */
-	acc_1 = (theta1_dot_radHz - vel_back_1) / dt;
+	acc_1 = (theta1_dot_radHz - vel_back_1) / Ts;
 	vel_back_1 = theta1_dot_radHz;
 	force_unfiltered_1 = tau_p1_Nm - INERTIAL_1 * acc_1 - DAMPING * theta1_dot_radHz;
-	tau_1 = tau_1 + lambda * dt * force_unfiltered_1;
-    acc_2 = (theta2_dot_radHz - vel_back_2) / dt;
+	tau_1 = tau_1 + lambda * Ts * force_unfiltered_1;
+    acc_2 = (theta2_dot_radHz - vel_back_2) / Ts;
 	vel_back_2 = theta2_dot_radHz;
 	force_unfiltered_2 = tau_p2_Nm - INERTIAL_2 * acc_2 - DAMPING * theta2_dot_radHz;
-	tau_2 = tau_2 + lambda * dt * force_unfiltered_2;
-	/*acc = (theta1_dot_radHz - vel_back) / dt;
+	tau_2 = tau_2 + lambda * Ts * force_unfiltered_2;
+	/*acc = (theta1_dot_radHz - vel_back) / Ts;
     f_n = INERTIAL * acc + DAMPING * theta1_dot_radHz;
     f_fb = ALPHA * (f_n - f_a) + (1.0 - ALPHA) * f_fb_back;
     f_a = tau_p1_Nm - f_fb;

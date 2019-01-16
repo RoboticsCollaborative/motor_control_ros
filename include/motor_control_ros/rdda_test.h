@@ -1,6 +1,6 @@
 /**
  * \file
- * \Headerfile for haptic_config.c.
+ * \Headerfile for rdda_test.c.
  *
  * Edited by Zikun Yu -- yu.zik@husky.neu.edu
  *
