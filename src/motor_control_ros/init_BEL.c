@@ -86,7 +86,56 @@ int map_BEL_CSP_callback(uint16 motor) {
 
 /* Initialize BEL/motor parameters via SDO
  */
-int init_BEL_CSP(uint16 motor) {
+int init_BEL1_CSP(uint16 motor) {
+    
+    printf ("Motor drive %d init\n", motor);
+
+    uint16 BUF16; 
+    int16 IBUF16; 
+    int32 IBUF32; 
+    //uint8 BUF8; 
+    uint32 BUF32;
+
+    /* Motor params */
+    WRITE_SDO(motor, 0x2383, 12, IBUF32, 25456, "Motor torque constant");
+    WRITE_SDO(motor, 0x2383, 13, IBUF32, 650000, "Motor peak torque"); 
+    WRITE_SDO(motor, 0x2383, 14, IBUF32, 20000, "Motor continuous torque"); 
+
+    //~ READ_SDO(motor, 0x2383, 22, BUF16, "Motor encoder direction");
+    //~ osal_usleep(1000);
+    //~ WRITE_SDO(motor, 0x2383, 22, BUF16, 1, "Reverse motor direction"); // continuous torque = 0.2 Nm 
+    //~ osal_usleep(1000);
+    //~ READ_SDO(motor, 0x2383, 22, BUF16, "Motor encoder direction");
+    //~ osal_usleep(1000);
+    //~ READ_SDO(motor, 0x2383, 3, BUF16, "Motor wiring configuration");
+    //~ osal_usleep(1000);
+
+
+    /* Loop gains */
+    WRITE_SDO(motor, 0x2382, 1, BUF16, 0, "Position loop gain (Pp)");
+    WRITE_SDO(motor, 0x2381, 1, BUF16, 0, "Velocity loop gain (Vp)");
+    //READ_SDO (motor, 0x2382, 1, BUF16, "Velocity loop gain (Pp)");
+    //READ_SDO (motor, 0x2381, 1, BUF16, "Velocity loop gain (Vp)");
+
+    /* Motor limits */
+    WRITE_SDO(motor, 0x2110, 0,  IBUF16, 1400, "Peak current limit");
+    WRITE_SDO(motor, 0x2111, 0,  IBUF16, 700, "Continuous current limit"); /* units of 0.01A */
+    //READ_SDO(motor, 0x2111, 0, IBUF16, "Continuous current limit");
+    //READ_SDO(motor, 0x2110, 0, IBUF16, "Peak current limit");
+    //READ_SDO(motor, 0x2103, 0, IBUF32, "Velocity limit");
+
+
+    //READ_SDO(motor, 0x6061, 0, BUF8, "OpMode display");
+    
+    /* rated torque (0.001 Nm) */
+    /* 1 Nm = 5000 units (up to 4Nm) */
+    /* 1 unit = 0.2 mNm, CoE */ 
+    WRITE_SDO(motor, 0x6076, 0, BUF32, 200, "Motor rated torque");
+
+    return 0;
+}
+
+int init_BEL2_CSP(uint16 motor) {
     
     printf ("Motor drive %d init\n", motor);
 

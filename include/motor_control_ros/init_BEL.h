@@ -10,7 +10,8 @@ int SDO_write32(uint16 slave, uint16 index, uint8 subindex, uint32 value);
 int map_BEL_CSP_PDOs(uint16 slave);
 int map_BEL_CSP_callback(uint16 motor);
 
-int init_BEL_CSP(uint16 motor);
+int init_BEL1_CSP(uint16 motor);
+int init_BEL2_CSP(uint16 motor);
 
 
 #endif /* INIT_BEL_H */
